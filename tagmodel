@@ -1,0 +1,76 @@
+%source:创建媒资，包含内容（路径）、标签（10个）
+%p_a:进行一次标注行为的概率
+%p_o:标注旧标签的概率
+clear all;
+clear source;
+
+source.content='20160901.txt';
+
+source(2).content='20160902.txt';
+
+source(3).content='20160903.txt';
+
+source(4).content='20160904.txt';
+
+source(5).content='20160905.txt';
+
+source(6).content='20160906.txt';
+
+source(7).content='20160907.txt';
+
+source(8).content='20160908.txt';
+
+source(9).content='20160909.txt';
+
+source(10).content='20160910.txt';
+
+tagfield={'tagword','tagcount'};
+tagcell=cell(100,2);
+tag=cell2struct(tagcell,tagfield,2);
+for i=1:10
+fre=Word_frequency(source(i).content');
+field={'tagslib','wordfre'};
+tags=cell2struct(fre,field,2);
+source(i).tags=tags;
+source(i).tag=tag;
+source(i).count_tag=0;
+end;
+
+for j=1:100
+%随机选取资源
+source_num=randi(10);
+
+%判断是否进行标注行为p_a;
+% if randi(100)/100<1
+%     
+%     %旧媒资加旧标签
+%     if randi(100)/100<0.4
+%         
+%     %旧媒资加新标签
+%     else
+%         
+%     end
+% %新媒资加标签    
+% else
+     for i=1:length(source(source_num).tags)
+         flag=0;
+         index=0;
+         for k=1:length(source(source_num).tag)
+             if strcmpi(source(source_num).tags(i).tagslib,source(source_num).tag(k).tagword)
+                source(source_num).tag(k).tagcount=source(source_num).tag(k).tagcount+1;
+                flag=1;
+                index=k;
+                break;
+             end;  
+         end;
+         if(flag==0)
+             source(source_num).tag(length(source(source_num).tag)+1).tagword=source(source_num).tags(i).tagslib;
+             source(source_num).tag(length(source(source_num).tag)+1).tagcount=source(source_num).tag(length(source(source_num).tag)+1).tagcount+1;
+             break;
+         else
+             source(source_num).tag(index).tagcount=source(source_num).tag(index).tagcount+1;
+         end;
+     end;
+ end
+a=length(source(source_num).tag);
+
