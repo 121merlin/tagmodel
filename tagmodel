@@ -25,7 +25,7 @@ source(9).content='20160909.txt';
 source(10).content='20160910.txt';
 
 tagfield={'tagword','tagcount'};
-tagcell=cell(100,2);
+tagcell=cell(50,2);
 tag=cell2struct(tagcell,tagfield,2);
 for i=1:10
 fre=Word_frequency(source(i).content');
@@ -56,16 +56,21 @@ source_num=randi(10);
          flag=0;
          index=0;
          for k=1:length(source(source_num).tag)
-             if strcmpi(source(source_num).tags(i).tagslib,source(source_num).tag(k).tagword)
-                source(source_num).tag(k).tagcount=source(source_num).tag(k).tagcount+1;
-                flag=1;
-                index=k;
-                break;
-             end;  
+            while  ~isempty(source(source_num).tag(k).tagword)     
+               if strcmpi(source(source_num).tags(i).tagslib,source(source_num).tag(k).tagword)
+                  source(source_num).tag(k).tagcount=source(source_num).tag(k).tagcount+1;
+                  flag=1;
+                  index=k;
+                  break;
+               end;  
+            end;
+            if flag==1
+            break;
+            end;
          end;
          if(flag==0)
-             source(source_num).tag(length(source(source_num).tag)+1).tagword=source(source_num).tags(i).tagslib;
-             source(source_num).tag(length(source(source_num).tag)+1).tagcount=source(source_num).tag(length(source(source_num).tag)+1).tagcount+1;
+             source(source_num).tag(index+1).tagword=source(source_num).tags(i).tagslib;
+     source(source_num).tag(index+1).tagcount=source(source_num).tag(index+1).tagcount+1;
              break;
          else
              source(source_num).tag(index).tagcount=source(source_num).tag(index).tagcount+1;
