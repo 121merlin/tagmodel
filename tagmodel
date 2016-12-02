@@ -5,23 +5,14 @@ clear all;
 clear source;
 
 source.content='20160901.txt';
-
 source(2).content='20160902.txt';
-
 source(3).content='20160903.txt';
-
 source(4).content='20160904.txt';
-
 source(5).content='20160905.txt';
-
 source(6).content='20160906.txt';
-
 source(7).content='20160907.txt';
-
 source(8).content='20160908.txt';
-
 source(9).content='20160909.txt';
-
 source(10).content='20160910.txt';
 
 tagfield={'tagword','tagcount'};
@@ -34,12 +25,14 @@ tags=cell2struct(fre,field,2);
 source(i).tags=tags;
 source(i).tag=tag;
 source(i).count_tag=0;
+for j=1:50
+source(i).tag(j).tagcount=0;
+end;
 end;
 
 for j=1:100
 %随机选取资源
 source_num=randi(10);
-
 %判断是否进行标注行为p_a;
 % if randi(100)/100<1
 %     
@@ -52,30 +45,39 @@ source_num=randi(10);
 %     end
 % %新媒资加标签    
 % else
+         
      for i=1:length(source(source_num).tags)
-         flag=0;
+         flag1=0;
+         flag2=0;
          index=0;
-         for k=1:length(source(source_num).tag)
-            while  ~isempty(source(source_num).tag(k).tagword)     
-               if strcmpi(source(source_num).tags(i).tagslib,source(source_num).tag(k).tagword)
-                  source(source_num).tag(k).tagcount=source(source_num).tag(k).tagcount+1;
-                  flag=1;
+          for k=1:length(source(source_num).tag)
+             if isempty(source(source_num).tag(1).tagword)
+                 source(source_num).tag(1).tagword=source(source_num).tags(i).tagslib;
+                 source(source_num).tag(1).tagcount=source(source_num).tag(1).tagcount+1;
+                 source(source_num).count_tag=source(source_num).count_tag+1;
+                 flag2=1;
+                 break;
+             else flag2=0;
+             end;
+            
+             if isempty(source(source_num).tag(k).tagword)   %空，返回1
+             else   %非空
+                if strcmp(source(source_num).tags(i).tagslib,source(source_num).tag(k).tagword)==1 && isempty(source(source_num).tag(k+1).tagword)
+                  flag1=1;
                   index=k;
                   break;
-               end;  
-            end;
-            if flag==1
-            break;
-            end;
+                end; 
+             end;
          end;
-         if(flag==0)
-             source(source_num).tag(index+1).tagword=source(source_num).tags(i).tagslib;
-     source(source_num).tag(index+1).tagcount=source(source_num).tag(index+1).tagcount+1;
+         if flag1==1 && flag2==0
+             source(source_num).tag(index+1).tagword=source(source_num).tags(i+1).tagslib;
+             source(source_num).tag(index+1).tagcount=source(source_num).tag(index+1).tagcount+1;
+             source(source_num).count_tag=source(source_num).count_tag+1;
              break;
-         else
-             source(source_num).tag(index).tagcount=source(source_num).tag(index).tagcount+1;
+         end;
+         if flag2==1
+             break;
          end;
      end;
- end
-a=length(source(source_num).tag);
+end;
 
