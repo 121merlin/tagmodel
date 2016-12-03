@@ -1,0 +1,10 @@
+function results=Word_frequency(a)
+content=fileread(a);%读取txt文本
+word=regexp(content,'/','split')';%转换大小写，并用文本分隔为cell
+[val,~,idxV] = unique(word);%去除重复 val去除重复后单词，val=words(idxC),wrods=val(idxV)
+fre= accumarray(idxV,1);%对单词进行累加，统计出现次数
+[~, so]= sort(fre,'descend');     % 按出现频次降序排列，so是val里单词所在的位置
+word= val(so);    % 单词按降序排列
+freq= fre(so);           % 频次按降序排列
+tag_source_count=zeros(length(word),1);
+results = [word num2cell(freq) num2cell(tag_source_count)];    % 单词和对应的频次
