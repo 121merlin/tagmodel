@@ -21,20 +21,18 @@ tag=cell2struct(tagcell,tagfield,2);
 
 for i=1:10
     fre=Word_frequency(source(i).content');
-    field={'tagsword','wordfre','tag_source_count','tag_pix','tag_prx'};
+    field={'tagsword','wordfre','tag_source_count','tags_pix','tags_prx'};
     tags=cell2struct(fre,field,2);
     source(i).tags=tags;
     source(i).tag=tag;
-    source(i).count_tag=0;
+    [source(i).count_tag,source(i).tags_Ri,source(i).tag_Ri]=deal(0);
     for j=1:30
-        source(i).tag(j).tagcount=0;
-        source(i).tag(j).tag_source_count=0;
-        source(i).tag(j).tag_pix=0;
-        source(i).tag(j).tag_prx=0;
+        [source(i).tag(j).tagcount,source(i).tag(j).tag_source_count,source(i).tag(j).tag_pix,source(i).tag(j).tag_prx]=deal(0);
     end;
 end;
 
   for a=1:100
+      
       
   %随机选取资源
   source_num=randi(10);
@@ -89,17 +87,13 @@ end;
  %    
  %        
  %  
- %更新tag_source_count，表示标签标引资源数，计算标签信息价值
+ %更新tag_source_count，表示标签标引资源数
     for i=1:10
         for j=1:length(source(i).tags)
-        source(i).tags(j).tag_source_count=0;
-        source(i).tags(j).tag_pix=0;
-        source(i).tags(j).tag_prx=0;
+        [source(i).tags(j).tag_source_count,source(i).tags(j).tag_pix,source(i).tags(j).tag_prx]=deal(0);
         end;
         for k=1:30
-        source(i).tag(k).tag_source_count=0;
-        source(i).tag(k).tag_pix=0;
-        source(i).tag(k).tag_prx=0;
+        [source(i).tag(k).tag_source_count,source(i).tag(k).tag_pix,source(i).tag(k).tag_prx]=deal(0);
         end;
     end;
     
@@ -123,5 +117,38 @@ end;
             end;    
         end;
     end;
+    %更新tags_Ri、tag_Ri、tag_pix、tags_pix
+      for i=1:10
+          source(i).tags_Ri=0;
+          source(i).tag_Ri=0;
+      end;
+    
+      for i1=1:10
+          for j=1:length(source(i1).tags)
+              source(i1).tags_Ri=source(i1).tags_Ri+source(i1).tags(j).tag_source_count;
+              if source(i1).tags(j).tag_source_count==0
+                  source(i1).tags(j).tags_pix=0;
+              else
+                  source(i1).tags(j).tags_pix=1/source(i1).tags(j).tag_source_count;
+              end;
+          end;
+          for l=1:length(source(i1).tag)
+              source(i1).tag_Ri=source(i1).tag_Ri+source(i1).tag(l).tag_source_count;
+              if source(i1).tag(l).tag_source_count==0
+                  source(i1).tag(l).tag_pix=0;
+              else
+                  source(i1).tag(l).tag_pix=1/source(i1).tag(l).tag_source_count;
+              end;
+          end;
+      end;
+      %更新tags_prx、tag_prx
+      for i1=1:10
+          for j=1:length(source(i1).tags)
+              source(i1).tags(j).tags_prx=source(i1).tags(j).tag_source_count/source(i1).tags_Ri;
+          end;
+          for l=1:length(source(i1).tag)
+              source(i1).tag(l).tag_prx=source(i1).tag(l).tag_source_count/source(i1).tag_Ri;
+          end;
+      end;
   end;
  
