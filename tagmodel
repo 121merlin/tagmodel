@@ -39,7 +39,7 @@ end;
   
   
 %新媒资加标签 
-while a<=0.25*100
+if a<=0.25*100
        for i=1:length(source(source_num).tags)
             flag1=0;
             flag2=0;
