@@ -31,7 +31,7 @@ for i=1:10
     end;
 end;
 
-  for a=1:100
+  for a=1:1000
       
       
   %随机选取资源
@@ -39,7 +39,7 @@ end;
   
   
 %新媒资加标签 
-if a<=0.25*100
+if a<=100
        for i=1:length(source(source_num).tags)
             flag1=0;
             flag2=0;
@@ -74,7 +74,7 @@ if a<=0.25*100
             end;
         end;
 end;
-
+if a>100
  %p_a=1,给旧资源加标签
     p_o=0.8;
     u=0.8;
@@ -106,6 +106,7 @@ end;
         source(source_num).tag(tag_num+1).tagcount=source(source_num).tag(tag_num+1).tagcount+1;
         source(source_num).count_tag=source(source_num).count_tag+1;
    end;
+end;
  %更新tag_source_count，表示标签标引资源数
     for i=1:10
         for j=1:length(source(i).tags)
@@ -138,22 +139,22 @@ end;
     end;
     %更新tags_Ri、tag_Ri、tag_pix、tags_pix
       for i=1:10
-          source(i).tags_Ri=0;
+%           source(i).tags_Ri=0;
           source(i).tag_Ri=0;
       end;
     
       for i1=1:10
-          for j=1:length(source(i1).tags)
-              source(i1).tags_Ri=source(i1).tags_Ri+source(i1).tags(j).tag_source_count;
-              if source(i1).tags(j).tag_source_count==0
-                  source(i1).tags(j).tags_pix=0;
-              else
-                  source(i1).tags(j).tags_pix=1/source(i1).tags(j).tag_source_count;
-              end;
-          end;
+%           for j=1:length(source(i1).tags)
+%               source(i1).tags_Ri=source(i1).tags_Ri+source(i1).tags(j).tag_source_count;
+%               if source(i1).tags(j).tag_source_count==0
+%                   source(i1).tags(j).tags_pix=0;
+%               else
+%                   source(i1).tags(j).tags_pix=1/source(i1).tags(j).tag_source_count;
+%               end;
+%           end;
           for l=1:length(source(i1).tag)
-              source(i1).tag_Ri=source(i1).tag_Ri+source(i1).tag(l).tag_source_count;
-              if source(i1).tag(l).tag_source_count==0
+              source(i1).tag_Ri=source(i1).tag_Ri+source(i1).tag(l).tagcount;
+              if source(i1).tag(l).tag_source_count==0 || source(i1).tag(l).tag_source_count==10
                   source(i1).tag(l).tag_pix=0;
               else
                   source(i1).tag(l).tag_pix=1/source(i1).tag(l).tag_source_count;
@@ -162,12 +163,13 @@ end;
       end;
       %更新tags_prx、tag_prx
       for i1=1:10
-          for j=1:length(source(i1).tags)
-              source(i1).tags(j).tags_prx=source(i1).tags(j).tag_source_count/source(i1).tags_Ri;
-          end;
+%           for j=1:length(source(i1).tags)
+%               source(i1).tags(j).tags_prx=source(i1).tags(j).tag_source_count/source(i1).tags_Ri;
+%           end;
           for l=1:length(source(i1).tag)
-              source(i1).tag(l).tag_prx=source(i1).tag(l).tag_source_count/source(i1).tag_Ri;
+              source(i1).tag(l).tag_prx=source(i1).tag(l).tagcount/source(i1).tag_Ri;
           end;
       end;
   end;
  
+
