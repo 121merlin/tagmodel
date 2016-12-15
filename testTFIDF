@@ -1,0 +1,64 @@
+
+%source:创建媒资，包含内容（路径）、标签（10个）
+%p_a:进行一次标注行为的概率
+%p_o:标注旧标签的概率
+clear all;
+clear source;
+
+source.content='20160901.txt';
+source(2).content='20160902.txt';
+source(3).content='20160903.txt';
+source(4).content='20160904.txt';
+source(5).content='20160905.txt';
+source(6).content='20160906.txt';
+source(7).content='20160907.txt';
+source(8).content='20160908.txt';
+source(9).content='20160909.txt';
+source(10).content='20160910.txt';
+
+for i=1:10
+    source(i).tagslib='';
+    fre=Word_frequency(source(i).content);
+    field={'tagsword','wordfre'};
+    tags=cell2struct(fre,field,2);
+    sumfre=0;
+    source(i).wordfre=[];
+    source(i).weight=[];
+    for j=1:length(tags)
+        source(i).tagslib=strvcat(source(i).tagslib,tags(j).tagsword);
+        source(i).wordfre=[source(i).wordfre;tags(j).wordfre];
+    end;
+    for j=1:length(tags)
+        source(i).weight=[source(i).weight;tags(j).wordfre/sum(source(i).wordfre)];
+    end;
+    source(i).tagslength=length(tags);
+end;
+
+%更新tag_source_count，表示标签标引资源数
+     for i=1:10
+         source(i).tags_source_count=zeros(source(i).tagslength,1);
+     end;   
+     for i1=1:10
+         for l=1:source(i1).tagslength 
+             for i3=1:10
+                     if ismember(source(i1).tagslib(l,:),source(i3).tagslib)==1
+                         source(i1).tags_source_count(l)=source(i1).tags_source_count(l)+1;
+                     end;
+             end;    
+         end;
+     end;
+tagslibrary='';
+for i=1:10
+    tagslibrary=unique(strvcat(tagslibrary,source(i).tagslib),'rows');
+end;
+tag_tfidf=zeros(10,length(tagslibrary));
+for i=1:10
+    for j=1:source(i).tagslength
+        for k=1:length(tagslibrary)
+             if strcmp(source(i).tagslib(j,:),tagslibrary(k,:))==1
+                tag_tfidf(i,k)=source(i).tags_source_count(j);
+            end;
+        end;
+    end;
+end;
+data=TFIDF(tag_tfidf');
