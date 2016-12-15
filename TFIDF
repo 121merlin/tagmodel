@@ -1,0 +1,14 @@
+function [ dataMade ] = TFIDF( dataSet )  
+        [m,n] = size(dataSet);%计算dataSet的大小，m为词的个数，n为标题的个数  
+          
+        rowSum = sum(dataSet);% 每个标题中关键词的总和   
+        colSum = sum(dataSet,2);% 每个词在不同标题中出现的总和  
+          
+        dataMade = zeros(m,n);% 构造一个一样大小的矩阵，用于存储TF-IDF值  
+        for i = 1:m  
+            TempIDF = log2(n./colSum(i,:));  
+            for j = 1:n  
+                dataMade(i,j) = (dataSet(i,j)./rowSum(:,j))*TempIDF;  
+            end  
+        end  
+    end  
