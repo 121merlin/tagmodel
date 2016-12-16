@@ -1,6 +1,5 @@
 function results=Word_frequency(a)
-content=fileread(a);%读取txt文本
-word1=regexp(content,'/','split')';%转换大小写，并用文本分隔为cell
+word1=regexp(a,'/','split')';%转换大小写，并用文本分隔为cell
  num=length(word1);
  i=1;
 while 1
