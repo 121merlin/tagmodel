@@ -4,18 +4,10 @@
 clear all;
 clear source;
 
-source.content='20160901.txt';
-source(2).content='20160902.txt';
-source(3).content='20160903.txt';
-source(4).content='20160904.txt';
-source(5).content='20160905.txt';
-source(6).content='20160906.txt';
-source(7).content='20160907.txt';
-source(8).content='20160908.txt';
-source(9).content='20160909.txt';
-source(10).content='20160910.txt';
+[txt,row]=xlsread('E:\MATLAB\model\20160901-20160910内容.xls');
 
 for i=1:10
+    source(i).content=char(row(i));
     source(i).tagslib='';
     fre=Word_frequency(source(i).content);
     field={'tagsword','wordfre'};
@@ -110,7 +102,7 @@ for a=1:1000
      for i1=1:10
          for l=1:size(source(i1).tag,1) 
              for i3=1:10
-                     if ismember(source(i1).tag(l,:),source(i3).tag)==1
+                     if ismember(source1(i1).tagslib(l,:),source1(i3).tagslib,'rows')==1
                          source(i1).tag_source_count(l)=source(i1).tag_source_count(l)+1;
                      end;
              end;    
