@@ -1,72 +1,102 @@
+
 %source:创建媒资，包含内容（路径）、标签（10个）
 %p_a:进行一次标注行为的概率
 %p_o:标注旧标签的概率
 clear all;
-clear source;
+clear source1;
 
-[txt,row]=xlsread('E:\MATLAB\model\20160901-20160910内容.xls');
+[txt1,row1]=xlsread('E:\MATLAB\model\20160901内容央视.xls');
 
-for i=1:10
-    source(i).content=char(row(i));
-    source(i).tagslib='';
-    fre=Word_frequency(source(i).content);
+for i=1:21
+    source1(i).content=char(row1(i));
+    source1(i).tagslib='';
+    fre=Word_frequency(source1(i).content);
     field={'tagsword','wordfre'};
     tags=cell2struct(fre,field,2);
     sumfre=0;
-    source(i).wordfre=[];
-    source(i).weight=[];
+    source1(i).wordfre=[];
     for j=1:length(tags)
-        source(i).tagslib=strvcat(source(i).tagslib,tags(j).tagsword);
-        source(i).wordfre=[source(i).wordfre;tags(j).wordfre];
+        source1(i).tagslib=strvcat(source1(i).tagslib,tags(j).tagsword);
+        source1(i).wordfre=[source1(i).wordfre;tags(j).wordfre];
     end;
-    for j=1:length(tags)
-        source(i).weight=[source(i).weight;tags(j).wordfre/sum(source(i).wordfre)];
-    end;
-    source(i).tagslength=length(tags);
-    [source(i).count_tag,source(i).tag_Ri]=deal(0);
-    source(i).tag='';
-    source(i).tagcount=[];
-    source(i).tagweight=[];
-    [source(i).tag_source_count,source(i).tag_pix,source(i).tag_prx]=deal(zeros(size(source(i).tag,1),1));
+    source1(i).weight=zeros(length(tags),1);
+    source1(i).tagslength=length(tags);
+    [source1(i).count_tag,source1(i).tag_Ri]=deal(0);
+    source1(i).tag='';
+    source1(i).tagcount=[];
+    [source1(i).tag_source_count,source1(i).tag_pix,source1(i).tag_prx]=deal(zeros(size(source1(i).tag,1),1));
 end;
 
-source_tag=zeros(20,10);
+%更新tags_source_count，表示标签标引资源数
+     for i=1:21
+         source1(i).tags_source_count=zeros(source1(i).tagslength,1);
+     end;   
+     for i1=1:21
+         for l=1:source1(i1).tagslength 
+             for i3=1:21
+                 if ismember(source1(i1).tagslib(l,:),source1(i3).tagslib,'rows')==1
+                     source1(i1).tags_source_count(l)=source1(i1).tags_source_count(l)+1;
+                 end;
+             end;    
+         end;
+     end;
+tagslibrary='';
+for i=1:21
+    tagslibrary=unique(strvcat(tagslibrary,source1(i).tagslib),'rows');
+end;
+tag_tfidf=zeros(10,length(tagslibrary));
+for i=1:21
+    for j=1:source1(i).tagslength
+          temp1=find((ismember(tagslibrary,source1(i).tagslib(j,:),'rows'))');
+          tag_tfidf(i,temp1)=source1(i).tags_source_count(j);
+    end;
+end;
+data=TFIDF(tag_tfidf);
+for i=1:21
+    for k=1:length(tagslibrary)
+          temp2=find((ismember(source1(i).tagslib,tagslibrary(k,:),'rows'))');
+          source1(i).weight(temp2)=data(i,k);
+    end;
+    [~, so]= sort(source1(i).weight,'descend'); 
+    source1(i).tagslib0=source1(i).tagslib(so,:);
+    source1(i).tagslib0weight=source1(i).weight(so);
+end;
 
-for a=1:1000
+source_tag=zeros(20,21);
+
+for a=1:2000
 %随机选取资源
-    source_num=randi(10);
+source_num=randi(21);
 %新媒资加标签 
-    if a<=100
-        for i=1:length(source(source_num).tagslib)
-            if isempty(source(source_num).tag)==1
-                source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(i,:));
-                source(source_num).tagcount=[1];
-                source(source_num).tagweight=[source(source_num).weight(i,1)];
-                source(source_num).count_tag=source(source_num).count_tag+1;
-                break;
-            else
-                flag0=0;
-                flag1=0;
-                j=1;
-                while 1
-                    if strcmp(source(source_num).tagslib(i,:),source(source_num).tag(j,:))==1
-                        flag0=1;
-                        break;
-                    end;
-                    j=j+1;
-                    if j> size(source(source_num).tag,1)
-                        flag1=1;
-                        break;
-                    end;
-                end;
-                if flag0==1
-                    continue;
-                end;
-                if flag0==0 && flag1==1
-                      source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(i,:));
-                      source(source_num).tagcount=[source(source_num).tagcount;1];
-                      source(source_num).tagweight=[source(source_num).tagweight;source(source_num).weight(i,1)];
-                      source(source_num).count_tag=source(source_num).count_tag+1;
+if a<=100
+        for i=1:source1(source_num).tagslength
+              if isempty(source1(source_num).tag)==1
+                     source1(source_num).tag=strvcat(source1(source_num).tag,source1(source_num).tagslib0(i,:));
+                     source1(source_num).tagcount=[1];
+                     source1(source_num).count_tag=source1(source_num).count_tag+1;
+                     break;
+              else
+                  flag0=0;
+                  flag1=0;
+                  j=1;
+                  while 1
+                        if strcmp(source1(source_num).tagslib0(i,:),source1(source_num).tag(j,:))==1
+                            flag0=1;
+                            break;
+                        end;
+                        j=j+1;
+                        if j> size(source1(source_num).tag,1)
+                            flag1=1;
+                            break;
+                        end;
+                  end
+                  if flag0==1
+                      continue;
+                  end;
+                  if flag0==0 && flag1==1
+                      source1(source_num).tag=strvcat(source1(source_num).tag,source1(source_num).tagslib0(i,:));
+                      source1(source_num).tagcount=[source1(source_num).tagcount;1];
+                      source1(source_num).count_tag=source1(source_num).count_tag+1;
                       break;
                   end;
               end;
@@ -74,65 +104,69 @@ for a=1:1000
  end;
  if a>100
   %p_a=1,给旧资源加标签
-     p_o=0.8;
-     u=0.5;
+     p_o=0.9;
+     u=0.7;
   %旧媒资加旧标签
     if randi(100)/100<p_o
          while 1
-             chosed_tag=randi(size(source(source_num).tag,1));
-             tag_p=u*source(source_num).tag_pix(chosed_tag)+(1-u)*(p_o*source(source_num).tag_prx(chosed_tag));%特定标签被选择概率计算
+             chosed_tag=randi(size(source1(source_num).tag,1));
+             tag_p=u*source1(source_num).tag_pix(chosed_tag)+(1-u)*p_o*source1(source_num).tag_prx(chosed_tag);%特定标签被选择概率计算
              if tag_p>=0.2
-                 source(source_num).tagcount(chosed_tag)=source(source_num).tagcount(chosed_tag)+1;
-                 source(source_num).count_tag=source(source_num).count_tag+1;
+                 source1(source_num).tagcount(chosed_tag)=source1(source_num).tagcount(chosed_tag)+1;
+                 source1(source_num).count_tag=source1(source_num).count_tag+1;
                  break;
              end;
          end;
   %旧媒资加新标签
     else
-         source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib((size(source(source_num).tag,1)+1),:));
-         source(source_num).tagcount=[source(source_num).tagcount;1];
-         source(source_num).tagweight=[source(source_num).tagweight;source(source_num).weight((size(source(source_num).tag,1)+1),1)];
-         source(source_num).count_tag=source(source_num).count_tag+1;
+        if length(source1(source_num).tag)>=source1(source_num).tagslength
+            continue;
+        else
+            source1(source_num).tag=strvcat(source1(source_num).tag,source1(source_num).tagslib0((size(source1(source_num).tag,1)+1),:));
+            source1(source_num).tagcount=[source1(source_num).tagcount;1];
+            source1(source_num).count_tag=source1(source_num).count_tag+1;
+        end;
     end;
  end;
 %更新tag_source_count，表示标签标引资源数
-     for i=1:10
-         [source(i).tag_source_count,source(i).tag_pix,source(i).tag_prx]=deal(zeros(size(source(i).tag,1),1));
+     for i=1:21
+         [source1(i).tag_source_count,source1(i).tag_pix,source1(i).tag_prx]=deal(zeros(size(source1(i).tag,1),1));
      end;   
-     for i1=1:10
-         for l=1:size(source(i1).tag,1) 
-             for i3=1:10
-                     if ismember(source1(i1).tagslib(l,:),source1(i3).tagslib,'rows')==1
-                         source(i1).tag_source_count(l)=source(i1).tag_source_count(l)+1;
+     for i1=1:21
+         for l=1:size(source1(i1).tag,1) 
+             for i3=1:21
+                     if ismember(source1(i1).tagslib0(l,:),source1(i3).tagslib0,'rows')==1
+                         source1(i1).tag_source_count(l)=source1(i1).tag_source_count(l)+1;
                      end;
              end;    
          end;
      end;
-    %更新tag_Ri、tag_pix
-       for i=1:10
-          source(i).tag_Ri=0;
+    %更新tags_Ri、tag_Ri、tag_pix、tags_pix
+       for i=1:21
+          source1(i).tag_Ri=0;
       end;
-        for i1=1:10
-           for l=1:size(source(i1).tag,1)
-               source(i1).tag_Ri=source(i1).tag_Ri+source(i1).tagcount(l);
-               if source(i1).tag_source_count(l)==0
-                   source(i1).tag_pix(l)=0;
+        for i1=1:21
+           for l=1:size(source1(i1).tag,1)
+               source1(i1).tag_Ri=source1(i1).tag_Ri+source1(i1).tagcount(l);
+               if source1(i1).tag_source_count(l)==0
+                   source1(i1).tag_pix(l)=0;
                else
-                   source(i1).tag_pix(l)=1/source(i1).tag_source_count(l);
+                   source1(i1).tag_pix(l)=1/source1(i1).tag_source_count(l);
                end;
            end;
        end;
-       %更新tag_prx
-       for i1=1:10
-           for l=1:size(source(i1).tag,1)
-               source(i1).tag_prx(l)=source(i1).tagcount(l)/source(i1).tag_Ri+source(i1).tagweight(l);
+       %更新tags_prx、tag_prx
+       for i1=1:21
+           for l=1:size(source1(i1).tag,1)
+               source1(i1).tag_prx(l)=source1(i1).tagcount(l)/source1(i1).tag_Ri;
            end;
        end;
-        %统计资源上标签分布（100次为一个步长）
+       %统计资源上标签分布（100次为一个步长）
        if rem(a,100)==0
            i=a/100;
-           for j=1:10
-               source_tag(i,j)=size(source(j).tag,1);
+           for j=1:21
+               source_tag(i,j)=size(source1(j).tag,1);
            end;
        end;
 end;
+
