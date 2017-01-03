@@ -1,38 +1,40 @@
-
 %source:创建媒资，包含内容（路径）、标签（10个）
 %p_a:进行一次标注行为的概率
 %p_o:标注旧标签的概率
 clear all;
 clear source;
 
-[txt,row]=xlsread('F:\Label\MATLAB\MATLAB\model\20160901内容网络.xls');;
+[~,row]=xlsread('E:\MATLAB\model\习近平.xlsx');
+newscount=length(row);
+circle=2000;
 
-for i=1:11
+for i=1:newscount
     source(i).content=char(row(i));
     source(i).tagslib='';
     fre=Word_frequency(source(i).content);
     field={'tagsword','wordfre'};
     tags=cell2struct(fre,field,2);
-    sumfre=0;
     source(i).wordfre=[];
-    for j=1:length(tags)
+    for j=1:size(tags,1)
         source(i).tagslib=strvcat(source(i).tagslib,tags(j).tagsword);
         source(i).wordfre=[source(i).wordfre;tags(j).wordfre];
     end;
     source(i).tagslength=length(tags);
     [source(i).count_tag,source(i).tag_Ri]=deal(0);
     source(i).tag='';
+    source(i).tagwordfre=[];
     source(i).tagcount=[];
     [source(i).tag_source_count,source(i).tag_pix,source(i).tag_prx]=deal(zeros(size(source(i).tag,1),1));
-    source1(i).source_tag=zeros(80,16);
-    source1(i).source_proportion=zeros(80,16);
+    source(i).source_tag=zeros(circle/100,16);
+    source(i).source_proportion=zeros(circle/100,16);
+    
 end;
-
-for a=1:1000
+% 随机加标签（随机选择标签，涵盖词频高和词频低）
+for a=1:circle
     %统计各个资源上前5个标签的使用次数占该资源被标注次数的占比分布（100次为一个步长）
        if rem(a,100)==0
            i=a/100;
-           for j=1:11
+           for j=1:newscount
                sourcetag(i,j)=sum(source(j).tagcount);
                for k=1:16
                    if k<=length(source(j).tagcount)
@@ -44,49 +46,18 @@ for a=1:1000
            end;
        end;
 %随机选取资源
-source_num=randi(11);
-%新媒资加标签 
-if a<=100
-        for i=1:length(source(source_num).tagslib)
-              if isempty(source(source_num).tag)==1
-                  tag_num=randi(source(i).tagslength);
-                  source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(tag_num,:));
-                  source(source_num).tagcount=[1];
-                  source(source_num).count_tag=source(source_num).count_tag+1;
-                  break;
-              else
-                  flag0=0;
-                  flag1=0;
-                  j=1;
-                  while 1
-                        if strcmp(source(source_num).tagslib(i,:),source(source_num).tag(j,:))==1
-                            flag0=1;
-                            break;
-                        end;
-                        j=j+1;
-                        if j> size(source(source_num).tag,1)
-                            flag1=1;
-                            break;
-                        end;
-                  end
-                  if flag0==1
-                      continue;
-                  end;
-                  if flag0==0 && flag1==1
-                      tag_num=randi(source(i).tagslength);
-                      if ismember(source(source_num).tag,source(source_num).tagslib(tag_num,:),'rows')==0
-                          source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(tag_num,:));
-                          source(source_num).tagcount=[source(source_num).tagcount;1];
-                          source(source_num).count_tag=source(source_num).count_tag+1;
-                      break;
-                  end;
-              end;
-         end;
- end;
- if a>100
-  %p_a=1,给旧资源加标签
-     p_o=0.8;
-     u=0.8;
+source_num=randi(newscount);
+if isempty(source(source_num).tag)==1
+    %给从未标注过的媒资加标签
+    tag_num=randi(source(source_num).tagslength);
+    source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(tag_num,:));
+    source(source_num).tagwordfre=[source(source_num).tagwordfre;source(source_num).wordfre(tag_num)];
+    source(source_num).tagcount=1;
+    source(source_num).count_tag=source(source_num).count_tag+1;
+else
+    %给标注过的媒资加标签     
+    p_o=0.8;
+    u=0.8;
   %旧媒资加旧标签
     if randi(100)/100<p_o
          while 1
@@ -100,20 +71,22 @@ if a<=100
          end;
   %旧媒资加新标签
     else
-        tag_num=randi(source(i).tagslength);
+        tag_num=randi(source(source_num).tagslength);
         if ismember(source(source_num).tag,source(source_num).tagslib(tag_num,:),'rows')==0
             source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(tag_num,:));
+            source(source_num).tagwordfre=[source(source_num).tagwordfre;source(source_num).wordfre(tag_num)];
             source(source_num).tagcount=[source(source_num).tagcount;1];
             source(source_num).count_tag=source(source_num).count_tag+1;
+        end;
     end;
  end;
 %更新tag_source_count，表示标签标引资源数
-     for i=1:11
+     for i=1:newscount
          [source(i).tag_source_count,source(i).tag_pix,source(i).tag_prx]=deal(zeros(size(source(i).tag,1),1));
      end;   
-     for i1=1:11
+     for i1=1:newscount
          for l=1:size(source(i1).tag,1) 
-             for i3=1:11
+             for i3=1:newscount
                      if ismember(source(i1).tag(l,:),source(i3).tag,'rows')==1
                          source(i1).tag_source_count(l)=source(i1).tag_source_count(l)+1;
                      end;
@@ -121,10 +94,10 @@ if a<=100
          end;
      end;
     %更新tags_Ri、tag_Ri、tag_pix、tags_pix
-       for i=1:11
+       for i=1:newscount
           source(i).tag_Ri=0;
       end;
-        for i1=1:11
+        for i1=1:newscount
            for l=1:size(source(i1).tag,1)
                source(i1).tag_Ri=source(i1).tag_Ri+source(i1).tagcount(l);
                if source(i1).tag_source_count(l)==0
@@ -135,28 +108,54 @@ if a<=100
            end;
        end;
        %更新tags_prx、tag_prx
-       for i1=1:11
+       for i1=1:newscount
            for l=1:size(source(i1).tag,1)
                source(i1).tag_prx(l)=source(i1).tagcount(l)/source(i1).tag_Ri;
            end;
        end;
 end;
+% 对随机获得标签赋权值（对得到的标签附权值，然后将标签按权值降序重新排序）
 tagslibrary='';
-for i=1:11
-    tagslibrary=unique(strvcat(tagslibrary,source(i).tag),'rows');
+for i=1:newscount
+    tagslibrary=unique(strvcat(tagslibrary,source(i).tagslib),'rows');
+    %source(i).tagweight=zeros(length(source(i).tag),1);
 end;
-tag_tfidf=zeros(11,length(tagslibrary));
-for i=1:11
-    for j=1:length(source1(i).tag)
-          temp1=find((ismember(tagslibrary,source(i).tag(j,:),'rows'))');
-          tag_tfidf(i,temp1)=source(i).wordfre(temp1);
+tag_tfidf=zeros(newscount,length(tagslibrary));
+for i=1:newscount
+    for j=1:size(source(i).tagslib,1)
+          temp1=find((ismember(tagslibrary,source(i).tagslib(j,:),'rows'))');
+          tag_tfidf(i,temp1)=source(i).wordfre(j);
     end;
 end;
 data=TFIDF(tag_tfidf);
-for i=1:11
-    for k=1:length(tagslibrary)
+for i=1:newscount
+    for k=1:size(tagslibrary,1)
           temp2=find((ismember(source(i).tag,tagslibrary(k,:),'rows'))');
-          source(i).weight(temp2)=data(i,k);
+          source(i).tagweight(temp2)=data(i,k);
     end;
-    [~, so]= sort(source(i).weight,'descend'); 
+end;
+% 分四类标签
+for i=1:newscount
+    source(i).tag_highfre_highweight='';
+    source(i).tag_highfre_lowweight='';
+    source(i).tag_lowfre_highweight='';
+    source(i).tag_lowfre_lowweight='';
+    %对得到的标签附权值，然后将标签按权值降序重新排序
+    [~, so]= sort(source(i).tagweight,'descend'); 
+    source(i).tagnew=source(i).tag(so,:);
+    source(i).tagnewwordfre=source(i).tagwordfre(so);
+    for j=1:size(source(i).tagnew,1)
+        if source(i).tagnewwordfre(j)>1 && j<=(length(source(i).tagnew)/2)
+            source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,source(i).tagnew(j,:));
+        end;
+        if source(i).tagnewwordfre(j)>1 && j>(length(source(i).tagnew)/2)
+            source(i).tag_highfre_lowweight=strvcat(source(i).tag_highfre_lowweight,source(i).tagnew(j,:));
+        end;
+        if source(i).tagnewwordfre(j)==1 && j<=(length(source(i).tagnew)/2)
+            source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,source(i).tagnew(j,:));
+        end;
+        if source(i).tagnewwordfre(j)==1 && j>(length(source(i).tagnew)/2)
+            source(i).tag_lowfre_lowweight=strvcat(source(i).tag_lowfre_lowweight,source(i).tagnew(j,:));
+         end;            
+    end;
 end;
