@@ -4,7 +4,7 @@
 clear all;
 clear source;
 
-[~,row]=xlsread('E:\MATLAB\model\习近平.xlsx');
+[~,row]=xlsread('E:\MATLAB\model\数据表格\G20.xlsx','新闻内容');
 newscount=length(row);
 circle=2000;
 
@@ -157,5 +157,31 @@ for i=1:newscount
         if source(i).tagnewwordfre(j)==1 && j>(length(source(i).tagnew)/2)
             source(i).tag_lowfre_lowweight=strvcat(source(i).tag_lowfre_lowweight,source(i).tagnew(j,:));
          end;            
+    end;
+    %补充用户数据标签
+    [~,row]=xlsread('E:\MATLAB\model\数据表格\G20.xlsx','用户数据');
+    content=char(row);
+    fre=Word_frequency(content);
+    field={'word','wordfre'};
+    u_data=cell2struct(fre,field,2);
+    add_usertag_count=0;
+    source(i).usertag='';
+    source(i).usertagfre=[];
+    for k=1:size(u_data)
+        if (ismember(u_data(k).word,source(i).tagslib,'rows')==1) && (ismember(u_data(k).word,source(i).tag,'rows')==0) && add_usertag_count<10
+            source(i).usertag=strvcat(source(i).usertag,u_data(k).word);
+            temp=find((ismember(source(i).tagslib,u_data(k).word,'rows'))');
+            source(i).usertagfre=[source(i).usertagfre;source(i).wordfre(temp)];
+            add_usertag_count=add_usertag_count+1;
+        end;
+    end;
+    %根据补充后的用户数据标签更新四个标签组分类
+    for l=1:size(source(i).usertag,1)
+        if source(i).usertagfre(l)>1
+            source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,source(i).usertag(l,:));
+        end;
+        if source(i).usertagfre(l)==1
+            source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,source(i).usertag(l,:));
+        end;
     end;
 end;
