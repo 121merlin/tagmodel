@@ -1,29 +1,29 @@
 package com.java.tagmethod2;
-
+//导入工具包
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-//导入工具包
-import java.util.Random;
+import java.util.Set;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
+
 
 class Topic {
 	private String topic ;
 	private int newsCount ;
 	private LinkedList<News> news ;//一个话题包含多条新闻
-	private ArrayList<Tag> tags ;//一个话题的标签集合
+	private LinkedList<Tag> tags ;//一个话题的标签集合
+	
 	public void setTopic(String topic) {
 		this.topic = topic ;
 	}
@@ -33,7 +33,7 @@ class Topic {
 	public void setNews(LinkedList<News> newslist) {
 		this.news = newslist ;
 	}
-	public void setTags(ArrayList<Tag> tags) {
+	public void setTags(LinkedList<Tag> tags) {
 		this.tags = tags ;
 	}
 	public Topic(String topic,int newsCount) {
@@ -43,8 +43,8 @@ class Topic {
 	public LinkedList<News> getNews() {
 		return this.news ;
 	}
-	public ArrayList<Tag> getTags() {
-		return this.tags ;
+	public LinkedList<Tag> getTags() {
+		return this.tags ; 
 	}
 	public String getTopic() {
 		return this.topic;
@@ -61,16 +61,24 @@ class News {
 	private String content ;
 	private int tag_Ri = 0;
 	private Topic topic ;//新闻所属话题
-	private Map<String, Integer> taglib ;
+	private Map<String, Integer> taglib_fre ;
 	private ArrayList<Tag> tags ;
+	private ArrayList<UserTag> userTags ;
+	private Map<String,Double> taglib_wei ;
+	public void setTaglib_wei(Map<String, Double> taglib_wei) {
+		this.taglib_wei = taglib_wei ;
+	}
 	public void setTag_Ri(int tag_Ri) {
 		this.tag_Ri = tag_Ri ;
 	}
 	public void setTags(ArrayList<Tag> tags) {
 		this.tags = tags ;
 	}
-	public void setTaglib(Map<String, Integer> taglib) {
-		this.taglib = taglib ;
+	public void setUsertags(ArrayList<UserTag> userTags) {
+		this.userTags = userTags ;
+	}
+	public void setTaglib(Map<String, Integer> taglib_fre) {
+		this.taglib_fre = taglib_fre ;
 	}
 	public void setTitle(String title) {
 		this.title = title ;
@@ -98,7 +106,13 @@ class News {
 		return this.content ;
 	}
 	public Map<String, Integer> getTaglib() {
-		return this.taglib;
+		return this.taglib_fre;
+	}
+	public Map<String, Double> getTaglib_wei() {
+		return this.taglib_wei ;
+	}
+	public ArrayList<UserTag> getUserTags() {
+		return this.userTags ;
 	}
 	public ArrayList<Tag> getTags() {
 		return this.tags;
@@ -106,24 +120,109 @@ class News {
 	public void printNews(){
 		System.out.println("\t新闻标题：" + this.title);
 		System.out.println("\t新闻内容：" + this.content);
-		System.out.println("\t新闻标签库：" + this.taglib);
-		System.out.println("\t标签库词量：" + this.taglib.size());
+		System.out.println("\t新闻标签库：" + this.taglib_fre);
+		System.out.println("\t标签库词量：" + this.taglib_fre.size());
 		System.out.println("\t标签：" + this.tags);
 		System.out.println();
+	}
+	public void tag_precision_recall_F1() {
+		
+	}
+}
+class UserTag{
+	private String tag ; 
+	private int tagfre ;
+	private int tagsorted; 
+	private double tag_precision ;//准确率
+	private double tag_recall ;//召回率
+	private double F1 ;//F1
+	private int tag_groupcount = 0;
+	private int tag_newscount = 0;
+	public void setTag(String tag) {
+		this.tag = tag ; 
+	}
+	public void setTagfre(int tagfre) {
+		this.tagfre = tagfre ;
+	}
+	public void setTagsorted(int tagsorted) {
+		this.tagsorted = tagsorted ;
+	}
+	public void setTag_precision(double tag_precision) {
+		this.tag_precision = tag_precision ;
+	}
+	public void setTag_recall(double tag_recall) {
+		this.tag_recall = tag_recall ;
+	}
+	public void setF1(double F1) {
+		this.F1 = F1 ;
+	}
+	public void setTag_groupcount(int tag_groupcount) {
+		this.tag_groupcount = tag_groupcount ;
+	}
+	public void setTag_newscount(int tag_newscount) {
+		this.tag_newscount = tag_newscount ;
+	}
+	public String getTag() {
+		return this.tag ; 
+	}
+	public int getTagfre() {
+		return this.tagfre ;
+	}
+	public int getTagsorted() {
+		return this.tagsorted ;
+	}
+	public double getTag_precision() {
+		return this.tag_precision ;
+	}
+	public double getTag_recall() {
+		return this.tag_recall ;
+	}
+	public double getF1() {
+		return this.F1 ;
+	}
+	public int getTag_groupcount() {
+		return this.tag_groupcount ;
+	}
+	public int getTag_newscount() {
+		return this.tag_newscount ;
 	}
 }
 class Tag{
 	private String tag ;
 	private int tagsorted = 0 ;//表示标签组中的标签分类：1，高频高价值；2，低频高价值；3，高频低价值；4，低频低价值
 	private int tagfre ;
+	private double tagweight ;
 	private int tag_source_count = 0;
 	private int tagcount = 0;
 	private double tag_pix ;
 	private double tag_prx ; 
+	private double tag_precision ;//准确率
+	private double tag_recall ;//召回率
+	private double F1 ;//F1
+	private int tag_groupcount = 0;
+	private int tag_newscount = 0;
 	private Topic topic ;//标签组所属话题
 	private News news ;//标签组所属新闻
+	public void setTag_precision(double tag_precision) {
+		this.tag_precision = tag_precision ;
+	}
+	public void setTag_recall(double tag_recall) {
+		this.tag_recall = tag_recall ;
+	}
+	public void setF1(double F1) {
+		this.F1 = F1 ;
+	}
+	public void setTag_groupcount(int tag_groupcount) {
+		this.tag_groupcount = tag_groupcount ;
+	}
+	public void setTag_newscount(int tag_newscount) {
+		this.tag_newscount = tag_newscount ;
+	}
 	public void setTagfre(int tagfre) {
 		this.tagfre = tagfre ;
+	}
+	public void setTagweight(double tagweight) {
+		this.tagweight = tagweight ;
 	}
 	public void setTag_source_count(int tag_source_count) {
 		this.tag_source_count = tag_source_count ;
@@ -149,9 +248,11 @@ class Tag{
 	public void setNews(News news) {
 		this.news = news ;
 	}
-
 	public int getTagfre() {
 		return this.tagfre ;
+	}
+	public double getTagweight() {
+		return this.tagweight ;
 	}
 	public int getTag_source_count() {
 		return this.tag_source_count ;
@@ -177,9 +278,26 @@ class Tag{
 	public int getTagSorted() {
 		return this.tagsorted;
 	}
+	public double getTag_precision() {
+		return this.tag_precision ;
+	}
+	public double getTag_recall() {
+		return this.tag_recall ;
+	}
+	public double getF1() {
+		return this.F1 ;
+	}
+	public int getTag_groupcount() {
+		return this.tag_groupcount ;
+	}
+	public int getTag_newscount() {
+		return this.tag_newscount ;
+	}
 	public void print() {
 		System.out.println("标签：" + this.tag + "; 标签组类别：" + this.tagsorted);
 	}
+    //补充准确率tag_precision、召回率tag_recall、F1
+	
 }
 public class TagMethod2 {
 	private static final String DBDRIVER = "com.mysql.jdbc.Driver" ;
@@ -350,6 +468,102 @@ public class TagMethod2 {
 			}
         	System.out.println();
       	}
+//对随机标注的标签利用（TF-IDF）附权值，按照权值高低排序
+        //获得选中话题的所有标签库
+        ps=connection.prepareStatement("select * from taglib where topic=?");
+        ps.setString(1, topiclist.get(2).getTopic());
+        rs = ps.executeQuery();
+	    ArrayList<String> templist= new ArrayList<String>() ;
+	    while(rs.next()){
+	       	templist.add(rs.getString(3));
+	    }
+	    HashSet<String> set = new HashSet<String>(templist) ;
+	    ArrayList<String> topic_taglib = new ArrayList<String>(set) ;
+	    double[][] tag_tfidffre = new double[topic_taglib.size()][news_count];
+	    for (int i = 0; i < news_count; i++) {
+			for (int j = 0; j < topiclist.get(2).getNews().get(i).getTaglib().size(); j++) {
+				Map<Integer, String> maptag = new HashMap<Integer,String>() ;
+	        	Map<String, Integer> temptaglib = topiclist.get(2).getNews().get(i).getTaglib();
+	        	int temp3 = topiclist.get(2).getNews().get(i).getTaglib().size() - 1 ;
+	        	for(Map.Entry<String, Integer> entry : temptaglib.entrySet()) {
+	        		maptag.put(temp3, entry.getKey());
+	        		temp3-- ;
+	        	}
+	        	int temp4 = topic_taglib.indexOf(maptag.get(j));
+	        	tag_tfidffre[temp4][i] = temptaglib.get(maptag.get(j));
+			}
+		}
+	    double[][] tag_tfidfweight = TFIDF(tag_tfidffre);
+	    for (int i = 0; i < news_count; i++) {
+	    	Map<String, Double> temptaglibwei = new HashMap<String,Double>();
+			Set<String> stringSet = topiclist.get(2).getNews().get(i).getTaglib().keySet();
+			for (int j = 0; j < topic_taglib.size(); j++) {
+				int temp3 = topiclist.get(2).getNews().get(i).getTags().indexOf(topic_taglib.get(j));
+				topiclist.get(2).getNews().get(i).getTags().get(temp3).setTagweight(tag_tfidfweight[j][i]);//得到每个被选关键词的权重
+				for(String str : stringSet){
+					temptaglibwei.put(str, tag_tfidfweight[topic_taglib.indexOf(str)][i]);
+				}
+			}
+			topiclist.get(2).getNews().get(i).setTaglib_wei(temptaglibwei);//得到每篇文章中所有关键词的权重
+		}
+	    //分四类标签
+	    double midweight = getMiddle(tag_tfidfweight);
+	  //补充用户数据
+	    ps=connection.prepareStatement("select * from userdata where topic=?");
+        ps.setString(1, topiclist.get(2).getTopic());
+        rs = ps.executeQuery();
+	    ArrayList<String> userdata= new ArrayList<String>() ;
+	    while(rs.next()){
+	       	userdata.add(rs.getString(2));
+	    }
+	    for (int i = 0; i < news_count; i++) {
+			//对每篇文章的关键词按权值高低
+	    	ArrayList<Tag> temptaglist = topiclist.get(2).getNews().get(i).getTags();
+	    	for (int j = 0; j < temptaglist.size(); j++) {
+				if (temptaglist.get(j).getTagfre()>1 && temptaglist.get(j).getTagweight()>=midweight) {
+					temptaglist.get(j).setTagSorted(1);
+				}
+				else if (temptaglist.get(j).getTagfre()==1 && temptaglist.get(j).getTagweight()>=midweight) {
+					temptaglist.get(j).setTagSorted(2);
+				}
+				else if (temptaglist.get(j).getTagfre()>1 && temptaglist.get(j).getTagweight()<midweight) {
+					temptaglist.get(j).setTagSorted(3);
+				}
+				else{
+					temptaglist.get(j).setTagSorted(4);
+				}
+			}
+	    	Map<String, Integer> temptaglib = topiclist.get(2).getNews().get(i).getTaglib() ;
+	    	Set<String> set2 = temptaglib.keySet() ;
+	    	int add_usertag=0 ;
+	    	ArrayList<UserTag> addUsertaglist = new ArrayList<UserTag>() ;
+		    for (int j = 0; j < userdata.size(); j++) {
+		    	
+				if (set2.contains(userdata.get(j))){
+					Set<String> set3 = new HashSet<String>();
+					for (int j2 = 0; j2 < temptaglist.size(); j2++) {
+						set3.add(temptaglist.get(j2).getTag()) ;
+					}
+					UserTag userTag = new UserTag() ;
+					if ((set3.contains(userdata.get(j)) == false) && (add_usertag < 10)) {
+						userTag.setTag(userdata.get(j));
+						userTag.setTagfre(topiclist.get(2).getNews().get(i).getTaglib().get(userdata.get(j)));
+						if (userTag.getTagfre()>1) {
+							userTag.setTagsorted(1);
+						}
+						else {
+							userTag.setTagsorted(2);
+						}
+						add_usertag++ ;
+					}
+					addUsertaglist.add(userTag);
+					topiclist.get(2).getNews().get(i).setUsertags(addUsertaglist);
+				}
+			}
+	    	topiclist.get(2).getNews().get(i).setTags(temptaglist);
+		}
+
+	    
 /*		//删除数据
 		PreparedStatement ps=connection.prepareStatement("delete from websites where name=?");
         ps.setString(1,"360");
@@ -395,5 +609,47 @@ public class TagMethod2 {
             sortedmap.put(tmpEntry.getKey(), tmpEntry.getValue());  
         }  
 		return sortedmap;
+	}
+	public static double[][] TFIDF(double[][] data) {//计算TFIDF权值
+		int m = data.length ;
+		int n = data[0].length ;
+		double[][] dataMade = new double[m][n];
+		double[] mSum = new double[m];//行求和
+		double[] nSum = new double[n];//列求和
+		for (int i = 0; i < m; i++) {
+			mSum[i] = 0 ;
+			for (int j = 0; j < n; j++) {
+				mSum[i] = data[i][j] + mSum[i] ; 
+			}
+		}
+		for (int i = 0; i < n; i++) {
+			nSum[i] = 0 ;
+			for (int j = 0; j < m; j++) {
+				nSum[i] = data[i][j] + nSum[i] ; 
+			}
+		}
+		for (int i = 0; i < m; i++) {
+			double tempidf = (Math.log(n/nSum[i]))/(Math.log(2)) ;
+			for (int j = 0; j < n; j++) {
+				dataMade[i][j] = data[i][j]/mSum[j]*tempidf ;
+			}
+		}
+		return dataMade ;
+	}
+	public static double getMiddle(double[][] data) {
+		double[] temp;
+		int len = 0;
+		for (double[] element : data) {
+			len += element.length;
+		}
+		temp = new double[len];
+		int index = 0 ;
+		for(double[] element : data){
+			for(double element2 : element){
+				temp[index++] = element2 ;
+			}
+		}
+		Arrays.sort(temp);
+		return temp[temp.length/2];
 	}
 }
