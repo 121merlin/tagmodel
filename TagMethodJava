@@ -23,7 +23,7 @@ class Topic {
 	private String topic ;
 	private int newsCount ;
 	private LinkedList<News> news ;//一个话题包含多条新闻
-	private LinkedList<Tag> tags ;//一个话题的标签集合
+	private ArrayList<Tag> tags ;//一个话题的标签集合
 	public void setTopic(String topic) {
 		this.topic = topic ;
 	}
@@ -33,12 +33,18 @@ class Topic {
 	public void setNews(LinkedList<News> newslist) {
 		this.news = newslist ;
 	}
+	public void setTags(ArrayList<Tag> tags) {
+		this.tags = tags ;
+	}
 	public Topic(String topic,int newsCount) {
 		this.topic = topic ;
 		this.newsCount = newsCount ;
 	}
 	public LinkedList<News> getNews() {
 		return this.news ;
+	}
+	public ArrayList<Tag> getTags() {
+		return this.tags ;
 	}
 	public String getTopic() {
 		return this.topic;
@@ -53,14 +59,14 @@ class Topic {
 class News {
 	private String title ;
 	private String content ;
-	private int tag_Ri;
+	private int tag_Ri = 0;
 	private Topic topic ;//新闻所属话题
 	private Map<String, Integer> taglib ;
-	private Map<String, Integer> tags ;
+	private ArrayList<Tag> tags ;
 	public void setTag_Ri(int tag_Ri) {
 		this.tag_Ri = tag_Ri ;
 	}
-	public void setTags(Map<String, Integer> tags) {
+	public void setTags(ArrayList<Tag> tags) {
 		this.tags = tags ;
 	}
 	public void setTaglib(Map<String, Integer> taglib) {
@@ -79,6 +85,9 @@ class News {
 		this.title = title ;
 		this.content = content ;
 	}
+	public int getTag_Ri() {
+		return this.tag_Ri ;
+	}
 	public Topic getTopic() {
 		return this.topic ;
 	}
@@ -91,7 +100,7 @@ class News {
 	public Map<String, Integer> getTaglib() {
 		return this.taglib;
 	}
-	public Map<String, Integer> getTags() {
+	public ArrayList<Tag> getTags() {
 		return this.tags;
 	}
 	public void printNews(){
@@ -105,9 +114,29 @@ class News {
 }
 class Tag{
 	private String tag ;
-	private int tagsorted ;//表示标签组中的标签分类：1，高频高价值；2，低频高价值；3，高频低价值；4，低频低价值
+	private int tagsorted = 0 ;//表示标签组中的标签分类：1，高频高价值；2，低频高价值；3，高频低价值；4，低频低价值
+	private int tagfre ;
+	private int tag_source_count = 0;
+	private int tagcount = 0;
+	private double tag_pix ;
+	private double tag_prx ; 
 	private Topic topic ;//标签组所属话题
 	private News news ;//标签组所属新闻
+	public void setTagfre(int tagfre) {
+		this.tagfre = tagfre ;
+	}
+	public void setTag_source_count(int tag_source_count) {
+		this.tag_source_count = tag_source_count ;
+	}
+	public void setTagcount(int tagcount) {
+		this.tagcount = tagcount ;
+	}
+	public void setTag_pix(double tag_pix) {
+		this.tag_pix = tag_pix ;
+	}
+	public void setTag_prx(double tag_prx) {
+		this.tag_prx = tag_prx ;
+	}
 	public void setTag(String tag) {
 		this.tag = tag ;
 	}
@@ -120,9 +149,21 @@ class Tag{
 	public void setNews(News news) {
 		this.news = news ;
 	}
-	public Tag(String tag,int tagsorted) {
-		this.tag = tag ;
-		this.tagsorted = tagsorted ;
+
+	public int getTagfre() {
+		return this.tagfre ;
+	}
+	public int getTag_source_count() {
+		return this.tag_source_count ;
+	}
+	public int getTagcount() {
+		return this.tagcount ;
+	}
+	public double getTag_pix() {
+		return this.tag_pix ;
+	}
+	public double getTag_prx() {
+		return this.tag_prx ;
 	}
 	public Topic getTopic() {
 		return this.topic ;
@@ -164,8 +205,8 @@ public class TagMethod2 {
             News news = new News(rs.getString(2),rs.getString(3));
             newslist.add(news);
             //新建标签组tag
-            Map<String, Integer> tag = new HashMap<String,Integer>(); 
-            news.setTags(tag);
+            ArrayList<Tag> tagList = new ArrayList<Tag>() ;
+            news.setTags(tagList);
             }
         //读取表topics中的话题数据，建立话题对象
       	ps=connection.prepareStatement("select * from topics");
@@ -196,6 +237,110 @@ public class TagMethod2 {
 	        }
 	        topiclist.get(2).getNews().get(i).setTaglib(sortMap(tag_map));
 		}
+        
+        //随机加标签
+        int circle = 2000 ;
+        int news_count = topiclist.get(2).getNewsCount() ;
+        LinkedList<News> chosedtopic_newslist = topiclist.get(2).getNews() ;
+        for (int i = 0; i < circle; i++) {
+        	
+//			if (i%100 == 0) {//100次循环是一个时间步
+//				
+//			}
+        	//随机选取新闻
+        	int news_num = (int)(Math.random()*news_count) ;
+        	//将所选中的新闻的taglib的键单独提出来定义一个maptag,便于索引
+        	Map<Integer, String> maptag = new HashMap<Integer,String>() ;
+        	Map<String, Integer> temptaglib = chosedtopic_newslist.get(news_num).getTaglib();
+        	ArrayList<Tag> chosednews_taglist = chosedtopic_newslist.get(news_num).getTags() ;
+        	int temp1 = temptaglib.size() - 1 ;
+        	for(Map.Entry<String, Integer> entry : temptaglib.entrySet()) {
+        		maptag.put(temp1, entry.getKey());
+        		temp1-- ;
+        	}
+        	if (chosednews_taglist.size()==0) {//该新闻从未标注过，随机选取一个标签
+        		int tag_num1 = (int)(Math.random()*maptag.size());
+        		Tag tag1 = new Tag() ;
+        		tag1.setTag(maptag.get(tag_num1)) ;
+        		tag1.setTagfre(temptaglib.get(maptag.get(tag_num1)));
+        		tag1.setTagcount(1);
+        		chosednews_taglist.add(tag1);
+        		chosedtopic_newslist.get(news_num).setTags(chosednews_taglist);
+			}
+        	else{//标注过的新闻加标签
+        		double p_o = 0.8 ;
+        		double u = 0.8 ;
+        		//加旧标签
+        		if ((Math.random()*100/100)<p_o) {
+					while (true) {
+						int chosed_tag = (int)(Math.random()*(chosednews_taglist.size()));
+						double tag_p = u*chosednews_taglist.get(chosed_tag).getTag_pix() 
+								+ (1-u)*p_o*chosednews_taglist.get(chosed_tag).getTag_prx();
+						if (tag_p >= 0.1) {
+							chosednews_taglist.get(chosed_tag).setTagcount(chosednews_taglist.get(chosed_tag).getTagcount()+1);
+							break ;
+						}
+					}
+				}
+        		//加新标签
+        		else {
+            		ArrayList<String> tagword = new ArrayList<String>();
+            		for (int l = 0; l < chosednews_taglist.size(); l++) {
+						tagword.add(chosednews_taglist.get(l).getTag());
+					}
+            		int tag_num2 = (int)(Math.random()*maptag.size());
+        			while (tagword.contains(maptag.get(tag_num2)) == false ) {
+        				Tag tag2 = new Tag() ;
+                		tag2.setTag(maptag.get(tag_num2)) ;
+                		tag2.setTagfre(temptaglib.get(maptag.get(tag_num2)));
+                		tag2.setTagcount(1);
+                		chosednews_taglist.add(tag2);
+                		chosedtopic_newslist.get(news_num).setTags(chosednews_taglist);
+                		break;
+					}
+				}
+        	}
+        	//更新tag_source_count，表示标签标引资源数
+        	for (int j = 0; j < news_count; j++) {
+				for (int k = 0; k < chosedtopic_newslist.get(j).getTags().size(); k++) {
+					for (int l = 0; l < news_count; l++) {
+						ArrayList<String> tagword = new ArrayList<String>();
+	            		for (int m = 0; m < chosedtopic_newslist.get(l).getTags().size(); m++) {
+							tagword.add(chosedtopic_newslist.get(l).getTags().get(m).getTag());
+						}
+						if (tagword.contains(chosedtopic_newslist.get(j).getTags().get(k).getTag())) {
+							chosedtopic_newslist.get(j).getTags().get(k).setTag_source_count
+							(chosedtopic_newslist.get(j).getTags().get(k).getTag_source_count()+1);
+						}
+					}
+				}
+			}
+        	//更新tag_Ri、tag_pix、tag_prx
+        	for (int j = 0; j < news_count; j++) {
+				chosedtopic_newslist.get(j).setTag_Ri(0);
+			}
+        	for (int j = 0; j < news_count; j++) {
+				for (int k = 0; k< chosedtopic_newslist.get(j).getTags().size(); k++) {
+					chosedtopic_newslist.get(j).setTag_Ri
+					(chosedtopic_newslist.get(j).getTag_Ri()+chosedtopic_newslist.get(j).getTags().get(k).getTagcount());
+					if (chosedtopic_newslist.get(j).getTags().get(k).getTag_source_count() == 0) {
+						chosedtopic_newslist.get(j).getTags().get(k).setTag_pix(0);
+					}
+					else {
+						chosedtopic_newslist.get(j).getTags().get(k).setTag_pix
+						(1/chosedtopic_newslist.get(j).getTags().get(k).getTag_source_count());
+					}
+				}
+			}
+        	for (int j = 0; j < news_count; j++) {
+				for (int k = 0; k< chosedtopic_newslist.get(j).getTags().size(); k++) {
+					chosedtopic_newslist.get(j).getTags().get(k).setTag_prx
+					(chosedtopic_newslist.get(j).getTags().get(k).getTagcount()/chosedtopic_newslist.get(j).getTag_Ri());
+				}
+			}
+		}
+        topiclist.get(2).setNews(chosedtopic_newslist);
+        //输出
         for (int j = 0; j < topiclist.size(); j++) {
         	topiclist.get(j).printTopic();
         	if (topiclist.get(j).getNews() != null) {
@@ -205,40 +350,6 @@ public class TagMethod2 {
 			}
         	System.out.println();
       	}
-        //随机加标签
-        int circle = 2000 ;
-        for (int i = 0; i < circle; i++) {
-        	
-//			if (i%100 == 0) {//100次循环是一个时间步
-//				
-//			}
-        	//随机选取新闻
-        	int news_num = (int)(Math.random()*topiclist.get(2).getNewsCount()) ;
-        	//将所选中的新闻的taglib的键单独提出来定义一个map,便于索引
-        	Map<Integer, String> maptag = new HashMap<Integer,String>() ;
-        	Map<String, Integer> temptaglib = topiclist.get(2).getNews().get(news_num).getTaglib();
-        	Map<String, Integer> temptags = topiclist.get(2).getNews().get(news_num).getTags();
-        	int temp1 = topiclist.get(2).getNews().get(news_num).getTaglib().size() - 1 ;
-        	for(Map.Entry<String, Integer> entry : temptaglib.entrySet()) {
-        		maptag.put(temp1, entry.getKey());
-        		temp1-- ;
-        	}
-        	if (topiclist.get(2).getNews().get(news_num).getTags() == null) {//该新闻从未标注过，随机选取一个标签
-        		int tag_num = (int)(Math.random()*maptag.size());
-        		temptags.put(maptag.get(tag_num), temptaglib.get(maptag.get(tag_num)));
-			}
-        	else{//标注过的新闻加标签
-        		double p_o = 0.8 ;
-        		double u = 0.8 ;
-        		//加新标签
-        		if ((Math.random()*100/100)<p_o) {
-					while (true) {
-						int chosed_tag = (int)(Math.random()*(temptags.size()));
-					}
-				}
-        		//加旧标签
-        	}
-		}
 /*		//删除数据
 		PreparedStatement ps=connection.prepareStatement("delete from websites where name=?");
         ps.setString(1,"360");
