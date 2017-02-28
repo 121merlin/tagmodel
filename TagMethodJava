@@ -1,0 +1,288 @@
+package com.java.tagmethod2;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+//导入工具包
+import java.util.Random;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.sql.SQLException;
+
+class Topic {
+	private String topic ;
+	private int newsCount ;
+	private LinkedList<News> news ;//一个话题包含多条新闻
+	private LinkedList<Tag> tags ;//一个话题的标签集合
+	public void setTopic(String topic) {
+		this.topic = topic ;
+	}
+	public void setNewsCount(int newsCount) {
+		this.newsCount = newsCount ;
+	}
+	public void setNews(LinkedList<News> newslist) {
+		this.news = newslist ;
+	}
+	public Topic(String topic,int newsCount) {
+		this.topic = topic ;
+		this.newsCount = newsCount ;
+	}
+	public LinkedList<News> getNews() {
+		return this.news ;
+	}
+	public String getTopic() {
+		return this.topic;
+	}
+	public int getNewsCount() {
+		return this.newsCount ;
+	}
+	public void printTopic() {
+		System.out.println("话题：" + this.topic + "; 新闻数：" + this.newsCount);
+	}
+}
+class News {
+	private String title ;
+	private String content ;
+	private int tag_Ri;
+	private Topic topic ;//新闻所属话题
+	private Map<String, Integer> taglib ;
+	private Map<String, Integer> tags ;
+	public void setTag_Ri(int tag_Ri) {
+		this.tag_Ri = tag_Ri ;
+	}
+	public void setTags(Map<String, Integer> tags) {
+		this.tags = tags ;
+	}
+	public void setTaglib(Map<String, Integer> taglib) {
+		this.taglib = taglib ;
+	}
+	public void setTitle(String title) {
+		this.title = title ;
+	}
+	public void setContent(String content) {
+		this.content = content ;
+	}
+	public void setTopic(Topic topic) {
+		this.topic = topic ;
+	}
+	public News(String title,String content) {
+		this.title = title ;
+		this.content = content ;
+	}
+	public Topic getTopic() {
+		return this.topic ;
+	}
+	public String getTitle() {
+		return this.title;
+	}
+	public String getContent() {
+		return this.content ;
+	}
+	public Map<String, Integer> getTaglib() {
+		return this.taglib;
+	}
+	public Map<String, Integer> getTags() {
+		return this.tags;
+	}
+	public void printNews(){
+		System.out.println("\t新闻标题：" + this.title);
+		System.out.println("\t新闻内容：" + this.content);
+		System.out.println("\t新闻标签库：" + this.taglib);
+		System.out.println("\t标签库词量：" + this.taglib.size());
+		System.out.println("\t标签：" + this.tags);
+		System.out.println();
+	}
+}
+class Tag{
+	private String tag ;
+	private int tagsorted ;//表示标签组中的标签分类：1，高频高价值；2，低频高价值；3，高频低价值；4，低频低价值
+	private Topic topic ;//标签组所属话题
+	private News news ;//标签组所属新闻
+	public void setTag(String tag) {
+		this.tag = tag ;
+	}
+	public void setTagSorted(int tagsorted) {
+		this.tagsorted = tagsorted ;
+	}
+	public void setTopic(Topic topic) {
+		this.topic = topic ;
+	}
+	public void setNews(News news) {
+		this.news = news ;
+	}
+	public Tag(String tag,int tagsorted) {
+		this.tag = tag ;
+		this.tagsorted = tagsorted ;
+	}
+	public Topic getTopic() {
+		return this.topic ;
+	}
+	public News getNews() {
+		return this.news ;
+	}
+	public String getTag(){
+		return this.tag;
+	}
+	public int getTagSorted() {
+		return this.tagsorted;
+	}
+	public void print() {
+		System.out.println("标签：" + this.tag + "; 标签组类别：" + this.tagsorted);
+	}
+}
+public class TagMethod2 {
+	private static final String DBDRIVER = "com.mysql.jdbc.Driver" ;
+	private static final String DB_URL = "jdbc:mysql://localhost:3306/tagdata" ;
+	private static final String USER = "root" ;
+	private static final String PASSWORD = "123456" ;
+
+	public static void main(String[] args) throws Exception {
+		//一、加载数据库驱动
+		Class.forName(DBDRIVER) ;
+		//二、连接数据库
+		Connection connection = DriverManager.getConnection(DB_URL,USER,PASSWORD) ;
+		//三、数据库操作
+		//查询数据
+        //读取表news中的新闻数据，建立News对象
+        PreparedStatement ps = connection.prepareStatement("select * from news where topic=?");
+        ps.setString(1, "杭州G20");
+        ResultSet rs = ps.executeQuery() ;
+        int count = rs.getRow() ;//获得该话题下的新闻数
+        LinkedList<News> newslist = new LinkedList<News>() ;
+        while(rs.next()){
+        	//建立新闻链表
+            News news = new News(rs.getString(2),rs.getString(3));
+            newslist.add(news);
+            //新建标签组tag
+            Map<String, Integer> tag = new HashMap<String,Integer>(); 
+            news.setTags(tag);
+            }
+        //读取表topics中的话题数据，建立话题对象
+      	ps=connection.prepareStatement("select * from topics");
+        rs = ps.executeQuery();
+        ArrayList<Topic> topiclist = new ArrayList<Topic>() ;
+        while(rs.next()){
+        //建立话题链表
+        Topic topic = new Topic(rs.getString(1), rs.getInt(2)) ;
+        topiclist.add(topic) ;
+        }
+        for (int i = 0; i < newslist.size(); i++) {
+			newslist.get(i).setTopic(topiclist.get(2));
+		}
+        topiclist.get(2).setNews(newslist);
+        
+        //获取taglib数据
+        ps=connection.prepareStatement("select * from taglib where topic=? and title=?");
+        ps.setString(1, topiclist.get(2).getTopic());
+        for (int i = 0; i < topiclist.get(2).getNews().size(); i++) {
+			ps.setString(2, topiclist.get(2).getNews().get(i).getTitle());
+			rs = ps.executeQuery();
+	        Map<String, Integer> tag_map= new HashMap<String,Integer>() ;
+	        while(rs.next()){
+	        //建立话题链表
+	        	String n_keyword = rs.getString(3);
+	        	int n_wordfre = rs.getInt(4);
+	        	tag_map.put(n_keyword, n_wordfre);
+	        }
+	        topiclist.get(2).getNews().get(i).setTaglib(sortMap(tag_map));
+		}
+        for (int j = 0; j < topiclist.size(); j++) {
+        	topiclist.get(j).printTopic();
+        	if (topiclist.get(j).getNews() != null) {
+        		for (int k = 0; k < topiclist.get(j).getNews().size(); k++) {
+    				topiclist.get(j).getNews().get(k).printNews();
+    			}
+			}
+        	System.out.println();
+      	}
+        //随机加标签
+        int circle = 2000 ;
+        for (int i = 0; i < circle; i++) {
+        	
+//			if (i%100 == 0) {//100次循环是一个时间步
+//				
+//			}
+        	//随机选取新闻
+        	int news_num = (int)(Math.random()*topiclist.get(2).getNewsCount()) ;
+        	//将所选中的新闻的taglib的键单独提出来定义一个map,便于索引
+        	Map<Integer, String> maptag = new HashMap<Integer,String>() ;
+        	Map<String, Integer> temptaglib = topiclist.get(2).getNews().get(news_num).getTaglib();
+        	Map<String, Integer> temptags = topiclist.get(2).getNews().get(news_num).getTags();
+        	int temp1 = topiclist.get(2).getNews().get(news_num).getTaglib().size() - 1 ;
+        	for(Map.Entry<String, Integer> entry : temptaglib.entrySet()) {
+        		maptag.put(temp1, entry.getKey());
+        		temp1-- ;
+        	}
+        	if (topiclist.get(2).getNews().get(news_num).getTags() == null) {//该新闻从未标注过，随机选取一个标签
+        		int tag_num = (int)(Math.random()*maptag.size());
+        		temptags.put(maptag.get(tag_num), temptaglib.get(maptag.get(tag_num)));
+			}
+        	else{//标注过的新闻加标签
+        		double p_o = 0.8 ;
+        		double u = 0.8 ;
+        		//加新标签
+        		if ((Math.random()*100/100)<p_o) {
+					while (true) {
+						int chosed_tag = (int)(Math.random()*(temptags.size()));
+					}
+				}
+        		//加旧标签
+        	}
+		}
+/*		//删除数据
+		PreparedStatement ps=connection.prepareStatement("delete from websites where name=?");
+        ps.setString(1,"360");
+        int len=ps.executeUpdate();
+        System.out.println("影响行数" + len) ;*/
+/*		//修改数据
+		PreparedStatement ps=connection.prepareStatement("update websites set url=?,country=?,alexa=?  where name=?");
+        ps.setString(1,"www.360.com.cn");
+        ps.setString(2, "chn");
+        ps.setInt(3,3);
+        ps.setString(4,"360");
+        int len = ps.executeUpdate();
+        System.out.println("影响行数" + len) ;*/
+/*		//插入数据
+		PreparedStatement ps=connection.prepareStatement(" INSERT INTO websites (name, url, country, alexa) VALUES (?,?,?,?)");
+		String name = "360" ;
+		String url = "www.360.com" ;
+		int alexa = 10 ;
+		String country = "CHN" ;
+		ps.setString(1, name) ;
+		ps.setString(2, url) ;
+		ps.setString(3, country) ;
+		ps.setInt(4, alexa) ;
+        int len = ps.executeUpdate();
+        System.out.println("影响行数" + len) ;*/
+		connection.close();
+	} 
+	//对tag_map进行排序，按词频降序排列
+	public static Map<String, Integer> sortMap(Map<String, Integer> map) {
+		// 通过ArrayList构造函数把map.entrySet()转换成list
+		List<Map.Entry<String, Integer>> arrayList = new ArrayList<Map.Entry<String, Integer>>(map.entrySet());        // 通过比较器实现比较排序
+        Collections.sort(arrayList, new Comparator<Map.Entry<String, Integer>>() {  
+            public int compare(Map.Entry<String, Integer> map1,  
+                        Map.Entry<String, Integer> map2) {  
+                return (map2.getValue().compareTo(map1.getValue()));  
+            }  
+        });  
+        Iterator<Map.Entry<String, Integer>> iter = arrayList.iterator();  
+        Map.Entry<String, Integer> tmpEntry = null;  
+        Map<String, Integer> sortedmap = new LinkedHashMap<String,Integer>() ;
+        while (iter.hasNext()) {  
+            tmpEntry = iter.next();  
+            sortedmap.put(tmpEntry.getKey(), tmpEntry.getValue());  
+        }  
+		return sortedmap;
+	}
+}
