@@ -1,4 +1,5 @@
 package com.java.tagmethod2;
+
 //导入工具包
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,13 +18,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
-
 class Topic {
 	private String topic ;
 	private int newsCount ;
 	private LinkedList<News> news ;//一个话题包含多条新闻
-	private LinkedList<Tag> tags ;//一个话题的标签集合
-	
+	private ArrayList<String> tags ;//一个话题的标签集合
 	public void setTopic(String topic) {
 		this.topic = topic ;
 	}
@@ -33,8 +32,14 @@ class Topic {
 	public void setNews(LinkedList<News> newslist) {
 		this.news = newslist ;
 	}
-	public void setTags(LinkedList<Tag> tags) {
-		this.tags = tags ;
+	public void setTags() {
+		ArrayList<String> alltopictags = new ArrayList<String>() ;
+		for (int i = 0; i < newsCount; i++) {
+			for (int j = 0; j < news.get(i).allTags().size(); j++) {
+				alltopictags.add(news.get(i).allTags().get(j));
+			}
+		}
+		this.tags = alltopictags ;
 	}
 	public Topic(String topic,int newsCount) {
 		this.topic = topic ;
@@ -43,7 +48,7 @@ class Topic {
 	public LinkedList<News> getNews() {
 		return this.news ;
 	}
-	public LinkedList<Tag> getTags() {
+	public ArrayList<String> getTags() {
 		return this.tags ; 
 	}
 	public String getTopic() {
@@ -125,8 +130,66 @@ class News {
 		System.out.println("\t标签：" + this.tags);
 		System.out.println();
 	}
+	public ArrayList<String> allTags() {
+		ArrayList<String> alltags = new ArrayList<String>() ;
+		for (int i = 0; i < userTags.size(); i++) {
+			alltags.add(userTags.get(i).getTag());
+		}
+		for (int i = 0; i < tags.size(); i++) {
+			alltags.add(tags.get(i).getTag());
+		}
+		return alltags ;
+	}
 	public void tag_precision_recall_F1() {
-		
+		Set<String> alltaglib = this.taglib_fre.keySet();
+		for (int i = 0; i < this.allTags().size(); i++) {
+			for (int j = 0; j < this.topic.getNewsCount(); j++) {
+				if (this.topic.getNews().get(j).allTags().contains(this.allTags().get(i))) {
+					if (i<userTags.size()) {
+						int tempgroupcount = this.userTags.get(i).getTag_groupcount();
+						this.userTags.get(i).setTag_groupcount(tempgroupcount+1);
+					}
+					else {
+						int tempindex = i-userTags.size() ;
+						int tempgroupcount = this.tags.get(tempindex).getTag_groupcount() ;
+						this.tags.get(tempindex).setTag_groupcount(tempgroupcount+1);
+					}
+				}
+				if (alltaglib.contains(this.allTags().get(i))) {
+					if (i<userTags.size()) {
+						int tempnewscount = this.userTags.get(i).getTag_newscount();
+						this.userTags.get(i).setTag_newscount(tempnewscount+1);
+					}
+					else {
+						int tempindex = i-userTags.size() ;
+						int tempnewscount = this.tags.get(tempindex).getTag_newscount() ;
+						this.tags.get(tempindex).setTag_newscount(tempnewscount+1);
+					}
+				}
+			}
+		}
+		for (int i = 0; i < this.allTags().size(); i++) {
+			if (i<userTags.size()) {
+				this.userTags.get(i).setTag_recall
+				(this.userTags.get(i).getTag_groupcount()/this.userTags.get(i).getTag_newscount());
+				this.userTags.get(i).setTag_precision
+				(this.userTags.get(i).getTag_groupcount()/this.getTopic().getNewsCount());
+				this.userTags.get(i).setF1
+				(this.userTags.get(i).getTag_recall()*this.userTags.get(i).getTag_precision()*2
+						/(this.userTags.get(i).getTag_recall()+this.userTags.get(i).getTag_precision()));
+			}
+			else {
+				int tempindex = i-userTags.size() ;
+				this.userTags.get(tempindex).setTag_recall
+				(this.userTags.get(tempindex).getTag_groupcount()/this.userTags.get(tempindex).getTag_newscount());
+				this.userTags.get(tempindex).setTag_precision
+				(this.userTags.get(tempindex).getTag_groupcount()/this.getTopic().getNewsCount());
+				this.userTags.get(tempindex).setF1
+				(this.userTags.get(tempindex).getTag_recall()*this.userTags.get(tempindex).getTag_precision()*2
+						/(this.userTags.get(tempindex).getTag_recall()+this.userTags.get(tempindex).getTag_precision()));
+
+			}
+		}
 	}
 }
 class UserTag{
@@ -187,7 +250,7 @@ class UserTag{
 		return this.tag_newscount ;
 	}
 }
-class Tag{
+class Tag {
 	private String tag ;
 	private int tagsorted = 0 ;//表示标签组中的标签分类：1，高频高价值；2，低频高价值；3，高频低价值；4，低频低价值
 	private int tagfre ;
@@ -468,7 +531,7 @@ public class TagMethod2 {
 			}
         	System.out.println();
       	}
-//对随机标注的标签利用（TF-IDF）附权值，按照权值高低排序
+        //对随机标注的标签利用（TF-IDF）附权值，按照权值高低排序
         //获得选中话题的所有标签库
         ps=connection.prepareStatement("select * from taglib where topic=?");
         ps.setString(1, topiclist.get(2).getTopic());
