@@ -506,17 +506,17 @@ public class TagMethod2 {
 	        }
 	        topiclist.get(2).getNews().get(i).setTaglib(sortMap(tag_map));
 		}
-      //输出
-        for (int j = 0; j < topiclist.size(); j++) {
-        	topiclist.get(j).printTopic();
-        	if (topiclist.get(j).getNews() != null) {
-        		for (int k = 0; k < topiclist.get(j).getNews().size(); k++) {
-        			System.out.println(k);
-    				topiclist.get(j).getNews().get(k).printNews();
-    			}
-			}
-        	System.out.println();
-      	}
+//      //输出
+//        for (int j = 0; j < topiclist.size(); j++) {
+//        	topiclist.get(j).printTopic();
+//        	if (topiclist.get(j).getNews() != null) {
+//        		for (int k = 0; k < topiclist.get(j).getNews().size(); k++) {
+//        			System.out.println(k);
+//    				topiclist.get(j).getNews().get(k).printNews();
+//    			}
+//			}
+//        	System.out.println();
+//      	}
         //随机加标签
         int circle = 500 ;
         int news_count = topiclist.get(2).getNewsCount() ;
@@ -678,6 +678,7 @@ public class TagMethod2 {
 	    while(rs.next()){
 	       	userdata.add(rs.getString(2));
 	    }
+	    System.out.println(userdata);
 	    for (int i = 0; i < news_count; i++) {
 			//对每篇文章的关键词按权值高低
 	    	//表示标签组中的标签分类：1，高频高价值；2，低频高价值；3，高频低价值；4，低频低价值
@@ -703,14 +704,17 @@ public class TagMethod2 {
 	    	int add_usertag=0 ;
 	    	ArrayList<UserTag> addUsertaglist = new ArrayList<UserTag>() ;
 		    for (int j = 0; j < userdata.size(); j++) {
-		    	
+		    	if (add_usertag>=10) {
+					break ;
+				}
 				if (set2.contains(userdata.get(j))){
-					Set<String> set3 = new HashSet<String>();
-					for (int j2 = 0; j2 < temptaglist.size(); j2++) {
-						set3.add(temptaglist.get(j2).getTag()) ;
+					ArrayList<String> taglist = new ArrayList<String>();
+					for (Tag tag : temptaglist) {
+						taglist.add(tag.getTag()) ;
 					}
+					System.out.println(taglist);
 					UserTag userTag = new UserTag() ;
-					if ((set3.contains(userdata.get(j)) == false) && (add_usertag < 10)) {
+					if ((taglist.contains(userdata.get(j)) == false)) {
 						userTag.setTag(userdata.get(j));
 						userTag.setTagfre(topiclist.get(2).getNews().get(i).getTaglib().get(userdata.get(j)));
 						if (userTag.getTagfre()>1) {
@@ -722,9 +726,14 @@ public class TagMethod2 {
 						add_usertag++ ;
 					}
 					addUsertaglist.add(userTag);
-					topiclist.get(2).getNews().get(i).setUsertags(addUsertaglist);
 				}
 			}
+		    topiclist.get(2).getNews().get(i).setUsertags(addUsertaglist);
+		    System.out.println(addUsertaglist.size());
+		    for(UserTag userTag2 : addUsertaglist){
+				System.out.print(userTag2.getTag() + "=" + userTag2.getTagfre() + ", ");
+			}
+			System.out.println();
 	    	topiclist.get(2).getNews().get(i).setTags(temptaglist);
 		}
 
