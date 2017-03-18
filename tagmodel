@@ -29,28 +29,130 @@ for i=1:newscount
     source(i).source_tag=zeros(circle/100,16);%每100个循环的时间步时，每个新闻上的标签数统计表初始化
     source(i).source_proportion=zeros(circle/100,16);%每100个循环的时间步时，每个新闻上的标签的被选择概率统计表初始化
 end;
+% 对标签赋权值并分类
+tagslibrary='';
+for i=1:newscount
+    tagslibrary=unique(strvcat(tagslibrary,source(i).tagslib),'rows');%将所有文章中的关键词汇总
+    %source(i).tagweight=zeros(length(source(i).tag),1);
+end;
+tag_tfidf_fre=zeros(newscount,length(tagslibrary));%建立tfidf二维表格计算权重
+tag_tfidf_count=zeros(newscount,length(tagslibrary));
+for i=1:newscount
+    for j=1:size(source(i).tagslib,1)
+          temp1=find((ismember(tagslibrary,source(i).tagslib(j,:),'rows'))');
+          tag_tfidf_fre(i,temp1)=source(i).wordfre(j);%对应文章中对应关键词的词频
+          tag_tfidf_count(i,temp1)=1;
+    end;
+end;
+data0=TFIDF(tag_tfidf_fre',tag_tfidf_count);
+data=data0';
+for i=1:newscount
+    for k=1:size(tagslibrary,1)
+          temp2=find((ismember(source(i).tag,tagslibrary(k,:),'rows'))');
+          source(i).tagweight(temp2)=data(i,k);%得到每个被选关键词的权重
+	      temp3=find((ismember(source(i).tagslib,tagslibrary(k,:),'rows'))');
+	      source(i).tagsweight(temp3)=data(i,k);%得到每篇文章中所有关键词的权重
+    end;
+    source(i).tagweight=source(i).tagweight';
+    source(i).tagsweight=source(i).tagsweight';
+end;
+ weight = [];
+ for i = 1:newscount
+     weight = [weight ; source(i).tagsweight];
+ end;
+ ave_weight=mean(weight);%求所有标签权重的平均值
+% 分四类标签
+for i=1:newscount
+    source(i).tag_highfre_highweight='';
+    source(i).tag_highfre_lowweight='';
+    source(i).tag_lowfre_highweight='';
+    source(i).tag_lowfre_lowweight='';
+     %对每篇文章的关键词按权值降序重新排序
+%      sorted_tagsweight=unique(source(i).tagsweight);%将所有文章中的关键词汇总
+%      mid_weight=median(sorted_tagsweight);    
+%      ave_weight = mean(sorted_tagsweight);
+%     %根据权重和词频来分成四组（词频：=1或者>1;权重：在对应文章的权重排序中在前一半或者后一半）
+%      for j=1:size(source(i).tag,1)
+%          if source(i).tagwordfre(j)>1 && source(i).tagweight(j)>=mid_weight
+%              source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,source(i).tag(j,:));
+%          end;
+%          if source(i).tagwordfre(j)>1 && source(i).tagweight(j)<mid_weight
+%              source(i).tag_highfre_lowweight=strvcat(source(i).tag_highfre_lowweight,source(i).tag(j,:));
+%          end;
+%          if source(i).tagwordfre(j)==1 && source(i).tagweight(j)>=mid_weight
+%              source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,source(i).tag(j,:));
+%          end;
+%          if source(i).tagwordfre(j)==1 && source(i).tagweight(j)<mid_weight
+%              source(i).tag_lowfre_lowweight=strvcat(source(i).tag_lowfre_lowweight,source(i).tag(j,:));
+%           end;            
+%      end;
+     for j=1:size(source(i).tagslib,1)
+          if source(i).wordfre(j)>1 && source(i).tagsweight(j)>=ave_weight
+              source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,source(i).tagslib(j,:));
+          end;
+          if source(i).wordfre(j)>1 && source(i).tagsweight(j)<ave_weight
+              source(i).tag_highfre_lowweight=strvcat(source(i).tag_highfre_lowweight,source(i).tagslib(j,:));
+          end;
+          if source(i).wordfre(j)==1 && source(i).tagsweight(j)>=ave_weight
+              source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,source(i).tagslib(j,:));
+          end;
+          if source(i).wordfre(j)==1 && source(i).tagsweight(j)<ave_weight
+              source(i).tag_lowfre_lowweight=strvcat(source(i).tag_lowfre_lowweight,source(i).tagslib(j,:));
+           end;            
+      end;
+   %补充用户数据标签,上限补充10个新标签
+    [~,row]=xlsread('E:\MATLAB\model\TagData\G20.xlsx','用户数据');
+    content=char(row);
+    fre=Word_frequency(content);
+    field={'word','wordfre'};
+    u_data=cell2struct(fre,field,2);
+    add_usertag_count=0;
+    source(i).usertag='';
+    source(i).usertagfre=[];
+    for k=1:size(u_data)
+        if ismember(u_data(k).word,source(i).tagslib,'rows')==1
+            if ismember(u_data(k).word,source(i).tag,'rows')==0 && add_usertag_count<10
+                source(i).usertag=strvcat(source(i).usertag,u_data(k).word);
+                temp4=find((ismember(source(i).tagslib,u_data(k).word,'rows'))');
+                source(i).usertagfre=[source(i).usertagfre;source(i).wordfre(temp4)];
+                add_usertag_count=add_usertag_count+1;
+            end;
+            if ismember(u_data(k).word,source(i).tag_highfre_lowweight,'rows')==1
+                temp5=find((ismember(source(i).tag_highfre_lowweight,u_data(k).word,'rows'))');
+                source(i).tag_highfre_lowweight(temp5,:)=[];
+                source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,u_data(k).word);
+            end;
+            if ismember(u_data(k).word,source(i).tag_lowfre_lowweight,'rows')==1
+                temp5=find((ismember(source(i).tag_lowfre_lowweight,u_data(k).word,'rows'))');
+                source(i).tag_lowfre_lowweight(temp5,:)=[];
+                source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,u_data(k).word);
+            end;
+        end;
+    end;
+    source(i).valuabletag = strvcat(source(i).tag_highfre_highweight,source(i).tag_lowfre_highweight);
+end;
 % 随机加标签（随机选择标签，涵盖词频高和词频低）
 for a=1:circle
-    %统计各个新闻上标签的使用次数占该新闻被标注次数的占比分布（100次为一个步长）
-       if rem(a,100)==0%取余函数，一个时间步到达
-           i=a/100;
-           for j=1:newscount
-               sourcetag(i,j)=sum(source(j).tagcount);
-               for k=1:16
-                   if k<=length(source(j).tagcount)
-                       source(j).source_tag(i,k)=source(j).tagcount(k);
-                       source(j).source_proportion(i,k)=source(j).tagcount(k)/sourcetag(i,j);
-                   end;
-               end;
-           end;
-       end;
+%     %统计各个新闻上标签的使用次数占该新闻被标注次数的占比分布（100次为一个步长）
+%        if rem(a,100)==0%取余函数，一个时间步到达
+%            i=a/100;
+%            for j=1:newscount
+%                sourcetag(i,j)=sum(source(j).tagcount);
+%                for k=1:16
+%                    if k<=length(source(j).tagcount)
+%                        source(j).source_tag(i,k)=source(j).tagcount(k);
+%                        source(j).source_proportion(i,k)=source(j).tagcount(k)/sourcetag(i,j);
+%                    end;
+%                end;
+%            end;
+%        end;
 %随机选取资源
 source_num=randi(newscount);
 if isempty(source(source_num).tag)==1
     %给从未标注过的媒资加标签
-    tag_num=randi(source(source_num).tagslength);
-    source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(tag_num,:));
-    source(source_num).tagwordfre=[source(source_num).tagwordfre;source(source_num).wordfre(tag_num)];
+    tag_num=randi(size(source(source_num).valuabletag,1));
+    source(source_num).tag=strvcat(source(source_num).tag,source(source_num).valuabletag(tag_num,:));
+%     source(source_num).tagwordfre=[source(source_num).tagwordfre;source(source_num).wordfre(tag_num)];
     source(source_num).tagcount=1;
     source(source_num).count_tag=source(source_num).count_tag+1;
 else
@@ -70,10 +172,10 @@ else
          end;
   %旧媒资加新标签
     else
-        tag_num=randi(source(source_num).tagslength);
-        if ismember(source(source_num).tag,source(source_num).tagslib(tag_num,:),'rows')==0
-            source(source_num).tag=strvcat(source(source_num).tag,source(source_num).tagslib(tag_num,:));
-            source(source_num).tagwordfre=[source(source_num).tagwordfre;source(source_num).wordfre(tag_num)];
+        tag_num=randi(size(source(source_num).valuabletag,1));
+        if ismember(source(source_num).tag,source(source_num).valuabletag(tag_num,:),'rows')==0
+            source(source_num).tag=strvcat(source(source_num).tag,source(source_num).valuabletag(tag_num,:));
+%             source(source_num).tagwordfre=[source(source_num).tagwordfre;source(source_num).wordfre(tag_num)];
             source(source_num).tagcount=[source(source_num).tagcount;1];
             source(source_num).count_tag=source(source_num).count_tag+1;
         end;
@@ -113,118 +215,7 @@ else
            end;
        end;
 end;
-% 对标签赋权值并分类
-tagslibrary='';
-for i=1:newscount
-    tagslibrary=unique(strvcat(tagslibrary,source(i).tagslib),'rows');%将所有文章中的关键词汇总
-    %source(i).tagweight=zeros(length(source(i).tag),1);
-end;
-tag_tfidf_fre=zeros(newscount,length(tagslibrary));%建立tfidf二维表格计算权重
-tag_tfidf_count=zeros(newscount,length(tagslibrary));
-for i=1:newscount
-    for j=1:size(source(i).tagslib,1)
-          temp1=find((ismember(tagslibrary,source(i).tagslib(j,:),'rows'))');
-          tag_tfidf_fre(i,temp1)=source(i).wordfre(j);%对应文章中对应关键词的词频
-          tag_tfidf_count(i,temp1)=1;
-    end;
-end;
-data0=TFIDF(tag_tfidf_fre',tag_tfidf_count);
-data=data0';
-for i=1:newscount
-    for k=1:size(tagslibrary,1)
-          temp2=find((ismember(source(i).tag,tagslibrary(k,:),'rows'))');
-          source(i).tagweight(temp2)=data(i,k);%得到每个被选关键词的权重
-	      temp3=find((ismember(source(i).tagslib,tagslibrary(k,:),'rows'))');
-	      source(i).tagsweight(temp3)=data(i,k);%得到每篇文章中所有关键词的权重
-    end;
-    source(i).tagweight=source(i).tagweight';
-    source(i).tagsweight=source(i).tagsweight';
-end;
-% weight = [];
-% for i = 1:newscount
-%     weight = [weight ; source(i).tagsweight];
-% end;
-% ave_weight=mean(weight);%求所有标签权重的平均值
-% 分四类标签
-for i=1:newscount
-    source(i).tag_highfre_highweight='';
-    source(i).tag_highfre_lowweight='';
-    source(i).tag_lowfre_highweight='';
-    source(i).tag_lowfre_lowweight='';
-%     %对每篇文章的关键词按权值降序重新排序
-%     sorted_tagsweight=unique(source(i).tagsweight);%将所有文章中的关键词汇总
-%     mid_weight=median(sorted_tagsweight);    
-    ave_weight = mean(source(i).tagsweight);
-    %根据权重和词频来分成四组（词频：=1或者>1;权重：在对应文章的权重排序中在前一半或者后一半）
-%     for j=1:size(source(i).tag,1)
-%         if source(i).tagwordfre(j)>1 && source(i).tagweight(j)>=mid_weight
-%             source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,source(i).tag(j,:));
-%         end;
-%         if source(i).tagwordfre(j)>1 && source(i).tagweight(j)<mid_weight
-%             source(i).tag_highfre_lowweight=strvcat(source(i).tag_highfre_lowweight,source(i).tag(j,:));
-%         end;
-%         if source(i).tagwordfre(j)==1 && source(i).tagweight(j)>=mid_weight
-%             source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,source(i).tag(j,:));
-%         end;
-%         if source(i).tagwordfre(j)==1 && source(i).tagweight(j)<mid_weight
-%             source(i).tag_lowfre_lowweight=strvcat(source(i).tag_lowfre_lowweight,source(i).tag(j,:));
-%          end;            
-%     end;
-    for j=1:size(source(i).tagslib,1)
-         if source(i).wordfre(j)>1 && source(i).tagsweight(j)>=ave_weight
-             source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,source(i).tagslib(j,:));
-         end;
-         if source(i).wordfre(j)>1 && source(i).tagsweight(j)<ave_weight
-             source(i).tag_highfre_lowweight=strvcat(source(i).tag_highfre_lowweight,source(i).tagslib(j,:));
-         end;
-         if source(i).wordfre(j)==1 && source(i).tagsweight(j)>=ave_weight
-             source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,source(i).tagslib(j,:));
-         end;
-         if source(i).wordfre(j)==1 && source(i).tagsweight(j)<ave_weight
-             source(i).tag_lowfre_lowweight=strvcat(source(i).tag_lowfre_lowweight,source(i).tagslib(j,:));
-          end;            
-     end;
-    %补充用户数据标签,上限补充10个新标签
-    [~,row]=xlsread('E:\MATLAB\model\TagData\G20.xlsx','用户数据');
-    content=char(row);
-    fre=Word_frequency(content);
-    field={'word','wordfre'};
-    u_data=cell2struct(fre,field,2);
-    add_usertag_count=0;
-    source(i).usertag='';
-    source(i).usertagfre=[];
-    for k=1:size(u_data)
-        if ismember(u_data(k).word,source(i).tagslib,'rows')==1
-            if ismember(u_data(k).word,source(i).tag,'rows')==0 && add_usertag_count<10
-                source(i).usertag=strvcat(source(i).usertag,u_data(k).word);
-                temp4=find((ismember(source(i).tagslib,u_data(k).word,'rows'))');
-                source(i).usertagfre=[source(i).usertagfre;source(i).wordfre(temp4)];
-                add_usertag_count=add_usertag_count+1;
-            end;
-            if ismember(u_data(k).word,source(i).tag_highfre_lowweight,'rows')==1
-                temp5=find((ismember(source(i).tag_highfre_lowweight,u_data(k).word,'rows'))');
-                source(i).tag_highfre_lowweight(temp5,:)=[];
-                source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,u_data(k).word);
-            end;
-            if ismember(u_data(k).word,source(i).tag_lowfre_lowweight,'rows')==1
-                temp5=find((ismember(source(i).tag_lowfre_lowweight,u_data(k).word,'rows'))');
-                source(i).tag_lowfre_lowweight(temp5,:)=[];
-                source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,u_data(k).word);
-            end;
-        end;
-    end;
-    source(i).tag=strvcat(source(i).tag,source(i).usertag);
 
-    %根据补充后的用户数据标签更新四个标签组分类
-    for l=1:size(source(i).usertag,1)
-        if source(i).usertagfre(l)>1 %对高频高价值的标签组进行补充
-            source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,source(i).usertag(l,:));
-        end;
-        if source(i).usertagfre(l)==1 %对低频高价值的标签组进行补充
-            source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,source(i).usertag(l,:));
-        end;
-    end;
-end;
 %补充准确率tag_precision、召回率tag_recall、F1
 for i=1:newscount
     source(i).tag_groupcount=zeros(size(source(i).tag,1),1);
@@ -250,10 +241,9 @@ for i=1:newscount
     xlabel('标签内容');
     ylabel('召回率');
     figure;%绘制不同新闻的标签的召回率和准确率以及F1
-    fx = bar(source(i).tag_recall_F1);
+    fx = bar(x1,source(i).tag_recall_F1);
     grid on;
     color = get(fx,'children');
-    set(gca,'XTickLabel',{'conditon 1','condition 2'})
     set(fx(1), 'FaceColor',[1 0 0]);% Pink
     set(fx(2), 'FaceColor',[0 0 1]); % Green
     title(sprintf('第%d篇新闻各标签的召回率、F1值分布',i));
