@@ -5,7 +5,7 @@ clear source;%创建source结构体，包含相关变量和参数
 
 [~,row]=xlsread('E:\MATLAB\model\TagData\G20.xlsx','新闻内容','d2:d16');
 newscount=length(row);%话题中包含的新闻条数
-circle=2000;%模型中第一步随机加标签的循环次数，可以人工调整
+circle=2500;%模型中第一步随机加标签的循环次数，可以人工调整
 %模型变量初始化
 for i=1:newscount
     source(i).content=char(row(i));%每条新闻内容
@@ -237,19 +237,21 @@ for i=1:newscount
     x1=1:size(source(i).tag,1);
     figure;%绘制不同新闻的标签的召回率和准确率以及F1
     bar(x1,source(i).tag_recall');
-    title(sprintf('第%d篇新闻各标签的召回率',i));
-    xlabel('标签内容');
-    ylabel('召回率');
+    title(sprintf('Recall values of the No.%d news tags',i));
+    xlabel('Tag Number');
+    ylabel('Recall');
     figure;%绘制不同新闻的标签的召回率和准确率以及F1
     fx = bar(x1,source(i).tag_recall_F1);
     grid on;
     color = get(fx,'children');
-    set(fx(1), 'FaceColor',[1 0 0]);% Pink
-    set(fx(2), 'FaceColor',[0 0 1]); % Green
-    title(sprintf('第%d篇新闻各标签的召回率、F1值分布',i));
-    xlabel('标签内容');
-    ylabel('召回率、F1值');
-    legend('召回率','F1值');
+    set(fx(1), 'FaceColor',[1 0 0]);% 红
+    set(fx(2), 'FaceColor',[0 0 1]); % 蓝
+    set(gca,'xtick',0:1:size(source(i).tag,1));
+    title(sprintf('Recall and F1 values of the No.%d news tags',i));
+    xlabel('Tag Number');
+    ylabel('Recall、F1');
+    hleg1 = legend('recall','F1','Orientation','horizontal','NorthOutside');
+    set(hleg1, 'Position', [.13,.94,.4,.05]);
     grid off;
 %     source(i).tag_recall=source(i).tag_groupcount./source(i).tag_newscount;
 %     source(i).tag_precision=source(i).tag_groupcount./newscount;
@@ -276,6 +278,7 @@ end;
 x2=1:size(topic_tag,1);
 figure;%绘制话题标签集合中的不同标签的频数
 bar(x2,topic_tagfre');
-title('杭州G20峰会的所有新闻标签频数统计');
-xlabel('标签内容');
-ylabel('标签频数');
+set(gca,'xtick',0:1:size(topic_tag,1));
+title('All news tag frequency statistics of Hangzhou G20 Summit');
+xlabel('Tag Number');
+ylabel('Tag Frequency');
