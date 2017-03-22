@@ -3,9 +3,9 @@ clear all;
 close all;
 clear source;%创建source结构体，包含相关变量和参数
 
-[~,row]=xlsread('E:\MATLAB\model\TagData\G20.xlsx','新闻内容','d2:d16');
+[~,row]=xlsread('C:\Users\huang-kun\Desktop\G20.xlsx','新闻内容','d2:d16');
 newscount=length(row);%话题中包含的新闻条数
-circle=2500;%模型中第一步随机加标签的循环次数，可以人工调整
+circle=2000;%模型中第一步随机加标签的循环次数，可以人工调整
 %模型变量初始化
 for i=1:newscount
     source(i).content=char(row(i));%每条新闻内容
@@ -56,17 +56,32 @@ for i=1:newscount
     source(i).tagweight=source(i).tagweight';
     source(i).tagsweight=source(i).tagsweight';
 end;
- weight = [];
- for i = 1:newscount
-     weight = [weight ; source(i).tagsweight];
- end;
- ave_weight=mean(weight);%求所有标签权重的平均值
+%  weight = [];
+%  for i = 1:newscount
+%      weight = [weight ; source(i).tagsweight];
+%  end;
+%  ave_weight=mean(weight);%求所有标签权重的平均值
 % 分四类标签
 for i=1:newscount
     source(i).tag_highfre_highweight='';
     source(i).tag_highfre_lowweight='';
     source(i).tag_lowfre_highweight='';
     source(i).tag_lowfre_lowweight='';
+    [~,so]=sort(source(i).tagsweight,'descend');
+    source(i).tagslib_1=source(i).tagslib(so,:);
+    source(i).tagsweight_1=source(i).tagsweight(so);
+    sum1=0;
+    sum2=0;
+    for k=1:floor(size(source(i).tagslib,1)*0.75)
+        sum1=sum1+source(k).tagsweight_1;
+    end;
+    ave_weight1=sum1/k;
+    for l=k+1:size(source(i).tagslib,1)
+        sum2=sum2+source(l).tagsweight_1;
+    end;
+    ave_weight2=sum2/(l-k);
+    ave_weight = ave_weight1*0.75+ave_weight2*0.25;
+%     ave_weight=mean(source(i).tagsweight);
      %对每篇文章的关键词按权值降序重新排序
 %      sorted_tagsweight=unique(source(i).tagsweight);%将所有文章中的关键词汇总
 %      mid_weight=median(sorted_tagsweight);    
@@ -100,35 +115,7 @@ for i=1:newscount
               source(i).tag_lowfre_lowweight=strvcat(source(i).tag_lowfre_lowweight,source(i).tagslib(j,:));
            end;            
       end;
-   %补充用户数据标签,上限补充10个新标签
-    [~,row]=xlsread('E:\MATLAB\model\TagData\G20.xlsx','用户数据');
-    content=char(row);
-    fre=Word_frequency(content);
-    field={'word','wordfre'};
-    u_data=cell2struct(fre,field,2);
-    add_usertag_count=0;
-    source(i).usertag='';
-    source(i).usertagfre=[];
-    for k=1:size(u_data)
-        if ismember(u_data(k).word,source(i).tagslib,'rows')==1
-            if ismember(u_data(k).word,source(i).tag,'rows')==0 && add_usertag_count<10
-                source(i).usertag=strvcat(source(i).usertag,u_data(k).word);
-                temp4=find((ismember(source(i).tagslib,u_data(k).word,'rows'))');
-                source(i).usertagfre=[source(i).usertagfre;source(i).wordfre(temp4)];
-                add_usertag_count=add_usertag_count+1;
-            end;
-            if ismember(u_data(k).word,source(i).tag_highfre_lowweight,'rows')==1
-                temp5=find((ismember(source(i).tag_highfre_lowweight,u_data(k).word,'rows'))');
-                source(i).tag_highfre_lowweight(temp5,:)=[];
-                source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,u_data(k).word);
-            end;
-            if ismember(u_data(k).word,source(i).tag_lowfre_lowweight,'rows')==1
-                temp5=find((ismember(source(i).tag_lowfre_lowweight,u_data(k).word,'rows'))');
-                source(i).tag_lowfre_lowweight(temp5,:)=[];
-                source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,u_data(k).word);
-            end;
-        end;
-    end;
+   
     source(i).valuabletag = strvcat(source(i).tag_highfre_highweight,source(i).tag_lowfre_highweight);
 end;
 % 随机加标签（随机选择标签，涵盖词频高和词频低）
@@ -215,7 +202,38 @@ else
            end;
        end;
 end;
-
+%补充用户数据标签,上限补充10个新标签
+    [~,row]=xlsread('C:\Users\huang-kun\Desktop\G20.xlsx','用户数据');
+    content=char(row);
+    fre=Word_frequency(content);
+    field={'word','wordfre'};
+    u_data=cell2struct(fre,field,2);
+ for i=1:newscount
+    add_usertag_count=0;
+    source(i).usertag='';
+%     source(i).usertagfre=[];
+    for k=1:size(u_data)
+        if ismember(u_data(k).word,source(i).tagslib,'rows')==1
+            if ismember(u_data(k).word,source(i).tag,'rows')==0 && add_usertag_count<10
+                source(i).usertag=strvcat(source(i).usertag,u_data(k).word);
+%                 temp4=find((ismember(source(i).tagslib,u_data(k).word,'rows'))');
+%                 source(i).usertagfre=[source(i).usertagfre;source(i).wordfre(temp4)];
+                add_usertag_count=add_usertag_count+1;
+            end;
+%             if ismember(u_data(k).word,source(i).tag_highfre_lowweight,'rows')==1
+%                 temp5=find((ismember(source(i).tag_highfre_lowweight,u_data(k).word,'rows'))');
+%                 source(i).tag_highfre_lowweight(temp5,:)=[];
+%                 source(i).tag_highfre_highweight=strvcat(source(i).tag_highfre_highweight,u_data(k).word);
+%             end;
+%             if ismember(u_data(k).word,source(i).tag_lowfre_lowweight,'rows')==1
+%                 temp5=find((ismember(source(i).tag_lowfre_lowweight,u_data(k).word,'rows'))');
+%                 source(i).tag_lowfre_lowweight(temp5,:)=[];
+%                 source(i).tag_lowfre_highweight=strvcat(source(i).tag_lowfre_highweight,u_data(k).word);
+%             end;
+        end;
+    end;
+    source(i).tag = strvcat(source(i).tag,source(i).usertag);
+ end;
 %补充准确率tag_precision、召回率tag_recall、F1
 for i=1:newscount
     source(i).tag_groupcount=zeros(size(source(i).tag,1),1);
