@@ -3,7 +3,7 @@ clear all;
 close all;
 clear source;%创建source结构体，包含相关变量和参数
 
-[~,row]=xlsread('C:\Users\huang-kun\Desktop\G20.xlsx','新闻内容','d2:d16');
+[~,row]=xlsread('E:\MATLAB\model\TagData\G20.xlsx','新闻内容','d2:d16');
 newscount=length(row);%话题中包含的新闻条数
 circle=2000;%模型中第一步随机加标签的循环次数，可以人工调整
 %模型变量初始化
@@ -72,15 +72,15 @@ for i=1:newscount
     source(i).tagsweight_1=source(i).tagsweight(so);
     sum1=0;
     sum2=0;
-    for k=1:floor(size(source(i).tagslib,1)*0.75)
-        sum1=sum1+source(k).tagsweight_1;
+    for k=1:floor(size(source(i).tagslib,1)*0.25)
+        sum1=sum1+source(i).tagsweight_1(k);
     end;
     ave_weight1=sum1/k;
     for l=k+1:size(source(i).tagslib,1)
-        sum2=sum2+source(l).tagsweight_1;
+        sum2=sum2+source(i).tagsweight_1(l);
     end;
     ave_weight2=sum2/(l-k);
-    ave_weight = ave_weight1*0.75+ave_weight2*0.25;
+    ave_weight = 0.85*(ave_weight1*0.25+ave_weight2*0.75);
 %     ave_weight=mean(source(i).tagsweight);
      %对每篇文章的关键词按权值降序重新排序
 %      sorted_tagsweight=unique(source(i).tagsweight);%将所有文章中的关键词汇总
@@ -202,15 +202,22 @@ else
            end;
        end;
 end;
+for i=1:newscount
+    source(i).tagcount_pro=source(i).tagcount/source(i).tag_Ri;
+    n=1:size(source(i).tag,1);
+    figure;
+    pie(source(i).tagcount_pro,n);
+    title(sprintf('The proportion of usage frequency of  tags based on the No.%d news content',i));
+end;
 %补充用户数据标签,上限补充10个新标签
-    [~,row]=xlsread('C:\Users\huang-kun\Desktop\G20.xlsx','用户数据');
+    [~,row]=xlsread('E:\MATLAB\model\TagData\G20.xlsx','用户数据');
     content=char(row);
     fre=Word_frequency(content);
     field={'word','wordfre'};
     u_data=cell2struct(fre,field,2);
  for i=1:newscount
     add_usertag_count=0;
-    source(i).usertag='';
+    source(i).usertag=''; 
 %     source(i).usertagfre=[];
     for k=1:size(u_data)
         if ismember(u_data(k).word,source(i).tagslib,'rows')==1
@@ -293,10 +300,20 @@ for i=1:size(topic_tag,1)
     b=sum(ismember(topic_tagset,topic_tag(i,:),'rows'));
     topic_tagfre = [topic_tagfre;b];
 end;
-x2=1:size(topic_tag,1);
-figure;%绘制话题标签集合中的不同标签的频数
-bar(x2,topic_tagfre');
-set(gca,'xtick',0:1:size(topic_tag,1));
-title('All news tag frequency statistics of Hangzhou G20 Summit');
+ [~,so]=sort(topic_tagfre,'descend');
+    topic_tag_1=topic_tag(so,:);
+    topic_tagfre_1=topic_tagfre(so);
+    for i =1:size(topic_tag,1)
+        if topic_tagfre_1(i)==1
+            break;
+        end;
+    end;
+    topic_tag_2=[topic_tag_1(1:(i-1),:)];
+    topic_tagfre_2=[topic_tagfre_1(1:(i-1),:)];
+x2=1:size(topic_tag_2,1);
+figure;%绘制话题标签集合中的不同标签的频数，只显示频数大于1的
+bar(x2,topic_tagfre_2');
+set(gca,'xtick',0:1:size(topic_tag_2,1));
+title('All news tag frequency(>1) statistics of Hangzhou G20 Summit');
 xlabel('Tag Number');
 ylabel('Tag Frequency');
